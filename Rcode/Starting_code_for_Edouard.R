@@ -88,126 +88,13 @@ phen_data_filt$area.F.var=scale(phen_data_filt$area.F.var)
 
 
 
-######## Analyse Edouard ###########
 
-str(phen_data_filt)
 
-############################################
-## STEP 1 — DEFINE PHENOTYPE (variance trait)
-############################################
 
-library(lme4)
-library(dplyr)
-library(ggplot2)
-library(car)
 
-## -------------------------------
-## 1. Filtrage des données
-## -------------------------------
 
-phen_data_step1 <- phen_data_filt %>%
-  filter(
-    env_label == "NGM",        # environnement unique
-    QC_label == "ok"           # qualité OK
-  ) %>%
-  mutate(
-    session_id = factor(session_id),
-    block_id   = factor(block_id),
-    pop_label  = factor(pop_label)
-  )
 
-## -------------------------------
-## 2. Vérification brute 
-## -------------------------------
 
-ggplot(phen_data_step1, aes(x = area.F, y = area.F.var)) +
-  geom_point(alpha = 0.3) +
-  theme_classic() +
-  labs(
-    x = "Mean area.forward (raw)",
-    y = "Variance area.forward (raw)",
-    title = "Raw mean–variance relationship"
-  )
-
-## -------------------------------
-## 3. Modèle environnemental sur la VARIANCE
-## -------------------------------
-
-## Y = variance du trait
-## On corrige :
-## - densité
-## - température
-## - humidité
-## - session (caméra / setup)
-## - block (date)
-
-var_model <- lmer(
-  area.F.var ~ 
-    area.F +
-    logD +
-    temperature +
-    rel_humidity +
-    (1 | block_id / session_id),
-  data = phen_data_step1,
-  REML = TRUE
-)
-
-summary(var_model)
-
-Anova(var_model)
-
-## -------------------------------
-## 4. Extraction du phénotype corrigé
-## -------------------------------
-
-## Résidus conditionnels = variance intrinsèque
-phen_data_step1$areaF_var_resid <- resid(var_model)
-
-## Centrage / standardisation 
-phen_data_step1$areaF_var_resid_scaled <- scale(
-  phen_data_step1$areaF_var_resid
-)
-
-## -------------------------------
-## 5. Diagnostic post-correction
-## -------------------------------
-
-## a) Résidus ~ 0 ?
-ggplot(phen_data_step1, aes(x = areaF_var_resid)) +
-  geom_histogram(bins = 50) +
-  theme_classic() +
-  labs(title = "Distribution of variance residuals")
-
-## b) Plus de structure session ?
-ggplot(phen_data_step1,
-       aes(x = session_id, y = areaF_var_resid)) +
-  geom_boxplot(outlier.alpha = 0.2) +
-  theme_classic() +
-  theme(axis.text.x = element_blank()) +
-  labs(title = "Residual variance by session")
-
-## c) Mean–variance APRÈS correction
-ggplot(phen_data_step1,
-       aes(x = area.F, y = areaF_var_resid)) +
-  geom_point(alpha = 0.3) +
-  theme_classic() +
-  labs(
-    x = "Mean area.forward",
-    y = "Corrected variance (residuals)",
-    title = "Mean–variance relationship after correction"
-  )
-
-## -------------------------------
-## 6. Objet final pour la suite
-## -------------------------------
-
-phenotype_final <- phen_data_step1 %>%
-  select(
-    pop_label,
-    block_id,
-    session_id,
-    areaF_var_resid_scaled
-  )
 
 
 
