@@ -23,9 +23,9 @@ library(emmeans)
 ## ===============================
 
 ## 1.1 Filtrage des données
-phen_data_step1 <- phen_data_filt %>%
+phen_data_step1 <- phen_data %>%
   filter(
-    env_label == "NGM",      
+    env_label == "NGM",
   ) %>%
   mutate(
     session_id = factor(session_id),
@@ -33,20 +33,21 @@ phen_data_step1 <- phen_data_filt %>%
     pop_label  = factor(pop_label)
   )
 
+#standard deviation method
+mean_pheno.varA <- mean(phen_data_step1$area.F.var, na.rm = TRUE)
+sd_pheno.varA <- sd(phen_data_step1$area.F.var, na.rm = TRUE)
+cutoff <- 3
+z_scores.varA <- (phen_data_step1$area.F.var - mean_pheno.varA) / sd_pheno.varA
+table(abs(z_scores.varA) <= cutoff) #6 avec 3x SD
+table(abs(z_scores.varA) >= -cutoff) #0 avec -3x SD (par symetrie)
+phen_data_step1$exper_data_id[abs(z_scores.varA) > cutoff] # retire 6 outliers de var trop haut 
+dim(phen_data_step1)
+phen_data_step1 <- phen_data_step1[abs(z_scores.varA) <= cutoff, ]
+dim(phen_data_step1)
 
 ## ===============================
 ## 1.2 Visualisation brute
 ## ===============================
-
-#Variance 
-ggplot(phen_data_step1, aes(x = area.F, y = area.F.var)) +
-  geom_point(alpha = 0.3) +
-  theme_classic() +
-  labs(
-    x = "Mean area.forward",
-    y = "Variance area.forward",
-    title = "Raw mean–variance relationship"
-  )
 
 #logD
 ggplot(phen_data_step1, aes(x = logD, y = area.F)) +
@@ -101,8 +102,7 @@ ggplot(phen_data_step1,
        y = "area.F",
        color = "Session") +
   theme(axis.text.x = element_blank(),
-        axis.ticks.x = element_blank(),
-        legend.position = "none")
+        axis.ticks.x = element_blank())
 
 ## ===============================
 ## 1.3 Modèle environnemental
@@ -174,6 +174,8 @@ ggplot(phen_data_step1,
 pheno_line <- emmeans(moy_model, "pop_label")
 pheno_moy <- as.data.frame(pheno_line)
 
+str(pheno_moy)
+str(phen_data_step1)
 
 
 

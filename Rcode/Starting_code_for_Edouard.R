@@ -3,7 +3,7 @@ library(data.table)
 library(matrixStats)
 ##### Load the phenotypic data
 
-phen_data <- read.table("/Users/edouardcourret/Documents/GitHub/2026_courret/data/all_phenotypes_from_movies.txt",sep='\t',h=TRUE)
+phen_data <- read.table("/Users/edouardcourret/Documents/GitHub/2026_courret/data/all_phenotypes_from_movies_fixed.txt",sep='\t',h=TRUE)
 
 # ## Create the session ID 
 phen_data$session_id <- substring(phen_data$date_str,1,4)
@@ -18,7 +18,7 @@ for(i in c("temperature","rel_humidity","logD")){
 
 phen_data=subset(phen_data,!is.na(phen_data$pop_label))  # Mostly MA lines and populations
 # Remove additonal populations
-phen_data=subset(phen_data,!phen_data$block_id%in%paste0("B",300:350))
+phen_data=subset(phen_data,!phen_data$block_id%in%paste0("B",200:400))
 phen_data=subset(phen_data,!phen_data$pop_label=="A00")
 phen_data=subset(phen_data,!phen_data$pop_label=="CX12311L0")
 phen_data=subset(phen_data,!phen_data$pop_label=="LSJ2L0")
@@ -39,15 +39,19 @@ phen_data=subset(phen_data,!is.na(phen_data$temperature))
 phen_data=subset(phen_data,!is.na(phen_data$rel_humidity))
 phen_data=subset(phen_data,!is.na(phen_data$logD))
 
-for(i in c("temperature","rel_humidity","logD")){
-  phen_data[,i]= (phen_data[,i]-mean(phen_data[,i],na.rm=TRUE))/sd(phen_data[,i])
-}
+#for(i in c("temperature","rel_humidity","logD")){
+#  phen_data[,i]= (phen_data[,i]-mean(phen_data[,i],na.rm=TRUE))/sd(phen_data[,i])
+#}
 
 vect_P_traits = c("area.F","area.F.var")
 
 # Remove NA values for phenotypes
 phen_data=subset(phen_data,!is.na(area.F) & !is.na(area.F.var))
 dim(phen_data) # 5281 movies
+
+
+
+##################################################################################################
 
 ## Investigate the data
 plot(phen_data$area.F,phen_data$area.F.var,log="y")

@@ -22,7 +22,18 @@ library(performance)
 ## ===============================
 
 #Variance 
+ggplot(phen_data_step1, aes(x = area.F, y = log(area.F.var))) +
+  geom_point(alpha = 0.3) +
+  theme_classic() 
 ggplot(phen_data_step1, aes(x = area.F, y = area.F.var)) +
+  geom_point(alpha = 0.3) +
+  theme_classic() 
+
+# points extremes 
+#phen_data_highvar <- phen_data_step1 %>%
+#  filter(area.F.var > 3e-4)
+
+ggplot(phen_data_step1, aes(x = area.F.mean_corr, y = area.F.var)) +
   geom_point(alpha = 0.3) +
   theme_classic() 
 
@@ -70,6 +81,8 @@ ggplot(phen_data_step1,
 ## 1.3 Modèle environnemental
 ## ===============================
 
+#1 modele mean
+
 var_model <- lmer(
   area.F.var ~
     area.F +
@@ -87,12 +100,42 @@ Anova(var_model)
 
 check_model(var_model)
 
+#2 modele corrected mean 
+
+phen_data_step1$area.F.mean_corr <- predict(moy_model)
+
+var_model_corr <- lmer(
+  area.F.var ~
+    area.F.mean_corr +
+    logD +
+    temperature +
+    rel_humidity +
+    pop_label +
+    (1 | session_id/block_id),
+  data = phen_data_step1,
+  REML = TRUE
+)
+
+summary(var_model_corr)
+Anova(var_model_corr)
+
+#3 coefficient of variation (CV) NON car 2fois mean
+
+phen_data_step1$area.F.var_corr <- predict(var_model_corr)
+
+pred_var <- predict(var_model_corr)
+phen_data_step1$CV_areaF <- (sqrt(pred_var) / phen_data_step1$area.F.mean_corr)*100
+
+ggplot(phen_data_step1, aes(x = area.F, y = CV_areaF)) +
+  geom_point(alpha = 0.3) +
+  theme_classic() 
+
 ## ===============================
 ## 1.4 Extraction du phénotype final
 ## ===============================
 
 ## Résidus = variance intrinsèque
-phen_data_step1$areaF_var_resid <- resid(var_model)
+phen_data_step1$areaF_var_resid <- resid(var_model_corr)
 
 ## Diagnostic post-correction
 ggplot(phen_data_step1, aes(x = areaF_var_resid)) +
@@ -139,8 +182,8 @@ ggplot(phen_data_step1,
 ## 2. EMMEANS
 ## ===============================
 
-pheno_line <- emmeans(var_model, "pop_label")
-pheno_var <- as.data.frame(pheno_line)
+pheno_line_var <- emmeans(var_model_corr, "pop_label")
+pheno_var <- as.data.frame(pheno_line_var)
 
 
 
