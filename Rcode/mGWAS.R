@@ -17,6 +17,7 @@ library(qqman)
 library(car)
 library(performance)
 library(emmeans)
+library(stringr)
 
 ## ===============================
 ## 1. Définition du phénotype
@@ -179,17 +180,6 @@ dim(pheno_mean)
 
 str(phen_data_step1)
 
-
-library(dplyr)
-
-# Merge par pop_label
-pheno_mean <- pheno_mean %>%
-  left_join(c(
-    "block_id", "session_id", "logD", "temperature", 
-    "rel_humidity", "exper_data_id", "file_id", 
-    "population", "population2", "pop_label"), by = "pop_label")
-
-
 write.csv(pheno_mean,
           file = "pheno_mean.csv",
           row.names = FALSE)
@@ -197,16 +187,37 @@ write.csv(pheno_mean,
 write.table(pheno_mean,
             file = "pheno_mean.txt",
             row.names = FALSE,
-            col.names = FALSE,
+            col.names = T,
             quote = FALSE)
 
-plot(pheno_mean$pop_label, pheno_mean$emmean)
 
-## 2.1 Lecture du VCF
-vcf <- read.vcfR("/Users/edouardcourret/Documents/GitHub/2026_courret/data/Cemee2025.imputed.SNP.filtered.final_renamed.vcf.gz")
+pheno_mean <- read.table("data/pheno_mean.txt")
 
-str(vcf@gt)
-gt_df <- as.data.frame(vcf@gt)
+pheno_mean <- pheno_mean %>%
+  mutate(
+    population = ifelse(
+      substr(pop_label, 1, 3) %in% c("SMR", "SLR"),
+      substr(pop_label, 1, 3),
+      substr(pop_label, 1, 2)
+    ),
+    population2 = str_extract(pop_label, ".*(?=L)")
+  )
 
-#GEMMA
+#plot de la taille 
+ggplot(pheno_mean, aes(x = population, y = emmean, color = population)) +
+  geom_point(size = 3, alpha = 0.8) +                     # les points
+  geom_errorbar(aes(ymin = lower.CL, ymax = upper.CL),     # intervalle de confiance
+                width = 0.2, alpha = 0.7) +
+  theme_classic() +
+  labs(
+    x = "Population",
+    y = "Estimated mean",
+    title = "Trait means with 95% confidence intervals by population"
+  ) +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),     # rotation des labels
+    legend.position = "none"                                # cache la légende si pas besoin
+  )
+
+
 

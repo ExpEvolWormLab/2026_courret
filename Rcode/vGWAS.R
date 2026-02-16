@@ -192,15 +192,34 @@ write.csv(pheno_var,
 write.table(pheno_var,
             file = "pheno_var.txt",
             row.names = FALSE,
-            col.names = FALSE,
+            col.names = T,
             quote = FALSE)
 
+pheno_var <- read.table("data/pheno_var.txt")
+
+pheno_var <- pheno_var %>%
+  mutate(
+    population = ifelse(
+      substr(pop_label, 1, 3) %in% c("SMR", "SLR"),
+      substr(pop_label, 1, 3),
+      substr(pop_label, 1, 2)
+    ),
+    population2 = str_extract(pop_label, ".*(?=L)")
+  )
 
 
-## 2.1 Lecture du VCF
-vcf <- read.vcfR("/Users/edouardcourret/Documents/GitHub/2026_courret/data/Cemee2025.imputed.SNP.filtered.final_renamed.vcf.gz")
-
-str(vcf@gt)
-gt_df <- as.data.frame(vcf@gt)
-
-#GEMMA
+#plot de la taille 
+ggplot(pheno_var, aes(x = population, y = emmean, color = population)) +
+  geom_point(size = 3, alpha = 0.8) +                     # les points
+  geom_errorbar(aes(ymin = lower.CL, ymax = upper.CL),     # intervalle de confiance
+                width = 0.2, alpha = 0.7) +
+  theme_classic() +
+  labs(
+    x = "Population",
+    y = "Estimated var",
+    title = "Trait var with 95% confidence intervals by population"
+  ) +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),     # rotation des labels
+    legend.position = "none"                                # cache la légende si pas besoin
+  )
