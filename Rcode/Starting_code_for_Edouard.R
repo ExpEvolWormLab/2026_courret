@@ -47,7 +47,7 @@ vect_P_traits = c("area.F","area.F.var")
 
 # Remove NA values for phenotypes
 phen_data=subset(phen_data,!is.na(area.F) & !is.na(area.F.var))
-dim(phen_data) # 5281 movies
+dim(phen_data) # 4999 movies
 
 
 

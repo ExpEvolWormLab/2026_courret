@@ -108,7 +108,7 @@ ggplot(phen_data_step1,
 ## 1.3 Modèle environnemental
 ## ===============================
 
-moy_model <- lmer(
+mean_model <- lmer(
   area.F ~
     logD +
     temperature +
@@ -119,17 +119,17 @@ moy_model <- lmer(
   REML = TRUE
 )
 
-summary(moy_model)
-Anova(moy_model)
+summary(mean_model)
+Anova(mean_model)
 
-check_model(moy_model)
+check_model(mean_model)
 
 ## ===============================
 ## 1.4 Extraction du phénotype final
 ## ===============================
 
 ## Résidus 
-phen_data_step1$areaF_moy_resid <- resid(moy_model)
+phen_data_step1$areaF_moy_resid <- resid(mean_model)
 
 ## Diagnostic post-correction
 ggplot(phen_data_step1, aes(x = areaF_moy_resid)) +
@@ -171,14 +171,17 @@ ggplot(phen_data_step1,
 ## 2. EMMEANS
 ## ===============================
 
-pheno_line <- emmeans(moy_model, "pop_label")
-pheno_moy <- as.data.frame(pheno_line)
+pheno_line_mean <- emmeans(mean_model, "pop_label")
+pheno_mean <- as.data.frame(pheno_line_mean)
 
-str(pheno_moy)
-str(phen_data_step1)
+str(pheno_mean)
+dim(pheno_mean)
 
+write.csv(pheno_mean,
+          file = "pheno_mean.csv",
+          row.names = FALSE)
 
-
+plot(pheno_mean$pop_label, pheno_mean$emmean)
 
 ## 2.1 Lecture du VCF
 vcf <- read.vcfR("/Users/edouardcourret/Documents/GitHub/2026_courret/data/Cemee2025.imputed.SNP.filtered.final_renamed.vcf.gz")

@@ -29,10 +29,6 @@ ggplot(phen_data_step1, aes(x = area.F, y = area.F.var)) +
   geom_point(alpha = 0.3) +
   theme_classic() 
 
-# points extremes 
-#phen_data_highvar <- phen_data_step1 %>%
-#  filter(area.F.var > 3e-4)
-
 ggplot(phen_data_step1, aes(x = area.F.mean_corr, y = area.F.var)) +
   geom_point(alpha = 0.3) +
   theme_classic() 
@@ -102,7 +98,7 @@ check_model(var_model)
 
 #2 modele corrected mean 
 
-phen_data_step1$area.F.mean_corr <- predict(moy_model)
+phen_data_step1$area.F.mean_corr <- predict(mean_model)
 
 var_model_corr <- lmer(
   area.F.var ~
@@ -119,14 +115,17 @@ var_model_corr <- lmer(
 summary(var_model_corr)
 Anova(var_model_corr)
 
-#3 coefficient of variation (CV) NON car 2fois mean
+check_model(var_model_corr)
 
-phen_data_step1$area.F.var_corr <- predict(var_model_corr)
+phen_data_step1$area.F.var_corr2 <- predict(var_model_corr) # mean corr
+phen_data_step1$area.F.var_corr = predict(var_model) #mean non corr
+plot(phen_data_step1$area.F.var_corr, phen_data_step1$area.F.var_corr2)
 
-pred_var <- predict(var_model_corr)
-phen_data_step1$CV_areaF <- (sqrt(pred_var) / phen_data_step1$area.F.mean_corr)*100
+#3 coefficient of variation (CV)
 
-ggplot(phen_data_step1, aes(x = area.F, y = CV_areaF)) +
+phen_data_step1$CV_areaF <- (sqrt(phen_data_step1$area.F.var_corr) / phen_data_step1$area.F.mean_corr)*100
+
+ggplot(phen_data_step1, aes(x = area.F.mean_corr, y = sqrt(area.F.var_corr))) +
   geom_point(alpha = 0.3) +
   theme_classic() 
 
@@ -182,8 +181,13 @@ ggplot(phen_data_step1,
 ## 2. EMMEANS
 ## ===============================
 
-pheno_line_var <- emmeans(var_model_corr, "pop_label")
+pheno_line_var <- emmeans(var_model, "pop_label")
 pheno_var <- as.data.frame(pheno_line_var)
+dim(pheno_var)
+
+write.csv(pheno_var,
+          file = "pheno_var.csv",
+          row.names = FALSE)
 
 
 
