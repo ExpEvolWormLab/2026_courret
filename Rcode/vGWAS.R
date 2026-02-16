@@ -134,7 +134,7 @@ ggplot(phen_data_step1, aes(x = area.F.mean_corr, y = sqrt(area.F.var_corr))) +
 ## ===============================
 
 ## Résidus = variance intrinsèque
-phen_data_step1$areaF_var_resid <- resid(var_model_corr)
+phen_data_step1$areaF_var_resid <- resid(var_model)
 
 ## Diagnostic post-correction
 ggplot(phen_data_step1, aes(x = areaF_var_resid)) +

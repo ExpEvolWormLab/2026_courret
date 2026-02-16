@@ -177,6 +177,19 @@ pheno_mean <- as.data.frame(pheno_line_mean)
 str(pheno_mean)
 dim(pheno_mean)
 
+str(phen_data_step1)
+
+
+library(dplyr)
+
+# Merge par pop_label
+pheno_mean <- pheno_mean %>%
+  left_join(c(
+    "block_id", "session_id", "logD", "temperature", 
+    "rel_humidity", "exper_data_id", "file_id", 
+    "population", "population2", "pop_label"), by = "pop_label")
+
+
 write.csv(pheno_mean,
           file = "pheno_mean.csv",
           row.names = FALSE)
