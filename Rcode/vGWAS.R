@@ -22,7 +22,14 @@ library(performance)
 ## ===============================
 
 #Variance 
+ggplot(phen_data_step1, aes(x = area.F, y = log(area.F.var))) +
+  geom_point(alpha = 0.3) +
+  theme_classic() 
 ggplot(phen_data_step1, aes(x = area.F, y = area.F.var)) +
+  geom_point(alpha = 0.3) +
+  theme_classic() 
+
+ggplot(phen_data_step1, aes(x = area.F.mean_corr, y = area.F.var)) +
   geom_point(alpha = 0.3) +
   theme_classic() 
 
@@ -70,6 +77,8 @@ ggplot(phen_data_step1,
 ## 1.3 Modèle environnemental
 ## ===============================
 
+#1 modele mean
+
 var_model <- lmer(
   area.F.var ~
     area.F +
@@ -87,12 +96,45 @@ Anova(var_model)
 
 check_model(var_model)
 
+#2 modele corrected mean 
+
+phen_data_step1$area.F.mean_corr <- predict(mean_model)
+
+var_model_corr <- lmer(
+  area.F.var ~
+    area.F.mean_corr +
+    logD +
+    temperature +
+    rel_humidity +
+    pop_label +
+    (1 | session_id/block_id),
+  data = phen_data_step1,
+  REML = TRUE
+)
+
+summary(var_model_corr)
+Anova(var_model_corr)
+
+check_model(var_model_corr)
+
+phen_data_step1$area.F.var_corr2 <- predict(var_model_corr) # mean corr
+phen_data_step1$area.F.var_corr = predict(var_model) #mean non corr
+plot(phen_data_step1$area.F.var_corr, phen_data_step1$area.F.var_corr2)
+
+#3 coefficient of variation (CV)
+
+phen_data_step1$CV_areaF <- (sqrt(phen_data_step1$area.F.var_corr) / phen_data_step1$area.F.mean_corr)*100
+
+ggplot(phen_data_step1, aes(x = area.F.mean_corr, y = sqrt(area.F.var_corr))) +
+  geom_point(alpha = 0.3) +
+  theme_classic() 
+
 ## ===============================
 ## 1.4 Extraction du phénotype final
 ## ===============================
 
 ## Résidus = variance intrinsèque
-phen_data_step1$areaF_var_resid <- resid(var_model)
+phen_data_step1$areaF_var_resid <- resid(var_model_corr)
 
 ## Diagnostic post-correction
 ggplot(phen_data_step1, aes(x = areaF_var_resid)) +
@@ -139,8 +181,19 @@ ggplot(phen_data_step1,
 ## 2. EMMEANS
 ## ===============================
 
-pheno_line <- emmeans(var_model, "pop_label")
-pheno_var <- as.data.frame(pheno_line)
+pheno_line_var <- emmeans(var_model, "pop_label")
+pheno_var <- as.data.frame(pheno_line_var)
+dim(pheno_var)
+
+write.csv(pheno_var,
+          file = "pheno_var.csv",
+          row.names = FALSE)
+
+write.table(pheno_var,
+            file = "pheno_var.txt",
+            row.names = FALSE,
+            col.names = FALSE,
+            quote = FALSE)
 
 
 
