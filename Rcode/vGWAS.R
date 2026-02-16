@@ -189,6 +189,12 @@ write.csv(pheno_var,
           file = "pheno_var.csv",
           row.names = FALSE)
 
+write.table(pheno_var,
+            file = "pheno_var.txt",
+            row.names = FALSE,
+            col.names = FALSE,
+            quote = FALSE)
+
 
 
 ## 2.1 Lecture du VCF

@@ -181,6 +181,12 @@ write.csv(pheno_mean,
           file = "pheno_mean.csv",
           row.names = FALSE)
 
+write.table(pheno_mean,
+            file = "pheno_mean.txt",
+            row.names = FALSE,
+            col.names = FALSE,
+            quote = FALSE)
+
 plot(pheno_mean$pop_label, pheno_mean$emmean)
 
 ## 2.1 Lecture du VCF
