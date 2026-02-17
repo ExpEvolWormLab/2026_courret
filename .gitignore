@@ -12,3 +12,7 @@ plot/Rplot01.svg
 plot/Rplot.svg
 plot/Rplot01.svg
 *.svg
+data/genotypes_for_gemma.txt
+data/genotypes_for_gemma_var.txt
+plot/Rplot.svg
+plot/Rplot01.svg
