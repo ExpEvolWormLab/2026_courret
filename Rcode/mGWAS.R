@@ -106,7 +106,7 @@ ggplot(phen_data_step1,
         axis.ticks.x = element_blank())
 
 ## ===============================
-## 1.3 Modèle environnemental
+## 1.3 Model
 ## ===============================
 
 mean_model <- lmer(
@@ -193,6 +193,8 @@ write.table(pheno_mean,
 
 pheno_mean <- read.table("data/pheno_mean.txt")
 
+dim(pheno_mean)
+
 pheno_mean <- pheno_mean %>%
   mutate(
     population = ifelse(
@@ -204,19 +206,18 @@ pheno_mean <- pheno_mean %>%
   )
 
 #plot de la taille 
-ggplot(pheno_mean, aes(x = population, y = emmean, color = population)) +
-  geom_point(size = 3, alpha = 0.8) +                     # les points
-  geom_errorbar(aes(ymin = lower.CL, ymax = upper.CL),     # intervalle de confiance
-                width = 0.2, alpha = 0.7) +
+ggplot(pheno_mean, aes(x = pop_label, y = emmean, color = population)) +
+  geom_point(size = 1, alpha = 0.8) +           
+  geom_errorbar(aes(ymin = lower.CL, ymax = upper.CL),    
+                width = 0.1, alpha = 0.5) +
   theme_classic() +
   labs(
-    x = "Population",
+    x = "lines",
     y = "Estimated mean",
     title = "Trait means with 95% confidence intervals by population"
   ) +
   theme(
-    axis.text.x = element_text(angle = 45, hjust = 1),     # rotation des labels
-    legend.position = "none"                                # cache la légende si pas besoin
+    axis.text.x = element_text(angle = 45, hjust = 1, size=2),
   )
 
 

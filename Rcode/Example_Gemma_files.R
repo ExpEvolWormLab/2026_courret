@@ -12,6 +12,8 @@ pheno_var <- read.table("data/pheno_var.txt")
 removed_isotypes <- read.table("data/removed_isotypes_Cemee_2025.txt")
 corr_isotypes <- read.csv("data/correspondance_isotypes.csv")
 
+dim(corr_isotypes)
+
 ### Remove the additional name info
 removed_isotypes$V1 <- gsub('CeMee', '', removed_isotypes$V1)
 removed_isotypes$V1 <- gsub('_sorted', '', removed_isotypes$V1)
@@ -65,7 +67,7 @@ for(i in genotyped_lines){
   ## Now extract all phenotypic data for these lines
   
   if(nrow(temp_pheno)==0){
-    gemma_pheno=rbind(gemma_pheno,rep(NA,14))
+    gemma_pheno=rbind(gemma_pheno,rep(NA,1))
   }else{
     gemma_pheno <- rbind(gemma_pheno,mean(temp_pheno$emmean,na.rm=TRUE))
   }

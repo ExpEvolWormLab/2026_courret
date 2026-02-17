@@ -3,7 +3,7 @@ library(data.table)
 library(matrixStats)
 ##### Load the phenotypic data
 
-phen_data <- read.table("/Users/edouardcourret/Documents/GitHub/2026_courret/data/all_phenotypes_from_movies_fixed.txt",sep='\t',h=TRUE)
+phen_data <- read.table("data/all_phenotypes_from_movies_fixed.txt",sep='\t',h=TRUE)
 
 # ## Create the session ID 
 phen_data$session_id <- substring(phen_data$date_str,1,4)

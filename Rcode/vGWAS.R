@@ -209,10 +209,10 @@ pheno_var <- pheno_var %>%
 
 
 #plot de la taille 
-ggplot(pheno_var, aes(x = population, y = emmean, color = population)) +
-  geom_point(size = 3, alpha = 0.8) +                     # les points
-  geom_errorbar(aes(ymin = lower.CL, ymax = upper.CL),     # intervalle de confiance
-                width = 0.2, alpha = 0.7) +
+ggplot(pheno_var, aes(x = pop_label, y = emmean, color = population)) +
+  geom_point(size = 1, alpha = 0.8) +                     
+  geom_errorbar(aes(ymin = lower.CL, ymax = upper.CL),     
+                width = 0.1, alpha = 0.5) +
   theme_classic() +
   labs(
     x = "Population",
@@ -220,6 +220,5 @@ ggplot(pheno_var, aes(x = population, y = emmean, color = population)) +
     title = "Trait var with 95% confidence intervals by population"
   ) +
   theme(
-    axis.text.x = element_text(angle = 45, hjust = 1),     # rotation des labels
-    legend.position = "none"                                # cache la légende si pas besoin
+    axis.text.x = element_text(angle = 45, hjust = 1, size= 2),  
   )
