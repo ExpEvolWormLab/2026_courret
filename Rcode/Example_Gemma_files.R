@@ -79,17 +79,16 @@ genotype_info_kept <- genotype_info[,phenotyped_lines]
 
 bimbam <- data.frame(id=snp_positions$ID,major=snp_positions$REF,minor=snp_positions$ALT)
 bimbam <- cbind(bimbam,genotype_info_kept)
-write.table(bimbam,"data/genotypes_for_gemma_var.txt",row.names=FALSE,col.names=FALSE,quote=FALSE)
-write.table(gemma_pheno,file="data/gemma_pheno_var.txt",sep='\t',quote=FALSE,row.names=FALSE,col.names=FALSE)
+write.table(bimbam,"data/genotypes_for_gemma_var.txt",row.names=FALSE,col.names=FALSE,quote=FALSE) # table geno
+write.table(gemma_pheno,file="data/gemma_pheno_var.txt",sep='\t',quote=FALSE,row.names=FALSE,col.names=FALSE) #table pheno
 
 gemma_pheno_withlines=data.frame(gemma_pheno)
-gemma_pheno_withlines$strain=
-  as.character(genotyped_lines[phenotyped_lines])
+gemma_pheno_withlines$strain=as.character(genotyped_lines[phenotyped_lines])
 
 write.table(gemma_pheno_withlines,file="data/gemma_pheno_withLines_var.txt",sep='\t',quote=FALSE,row.names=FALSE,col.names=FALSE)
 
 
-### Compute a GRM
+### Compute a GRM - étape pruning + kinship matrix 
 
 # créer dossier
 system("mkdir -p plink_pruning/pruning01")

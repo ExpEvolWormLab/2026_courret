@@ -5,3 +5,4 @@
 .DS_Store
 *.vcf
 data/Cemee2025.imputed.SNP.filtered.final_renamed.vcf.gz
+*.gz
