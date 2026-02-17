@@ -9,3 +9,6 @@ data/Cemee2025.imputed.SNP.filtered.final_renamed.vcf.gz
 *.svg
 plot/Rplot.svg
 plot/Rplot01.svg
+plot/Rplot.svg
+plot/Rplot01.svg
+*.svg
