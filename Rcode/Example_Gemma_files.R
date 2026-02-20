@@ -102,6 +102,7 @@ system("/opt/homebrew/bin/plink --vcf data/Cemee2025.imputed.SNP.filtered.final_
 system("bgzip plink_pruning/pruning01/CeMEE.pruned.0.1.vcf")
 
 genotype_pruned <- read.vcfR("plink_pruning/pruning01/CeMEE.pruned.0.1.vcf.gz")
+dim(genotype_pruned@gt)
 genotype_pruned_matrix <- apply(genotype_pruned@gt[,2:1002],1,function(x){
   as.numeric(substring(x,1,1))
 })

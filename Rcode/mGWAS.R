@@ -205,20 +205,35 @@ pheno_mean <- pheno_mean %>%
     population2 = str_extract(pop_label, ".*(?=L)")
   )
 
-#plot de la taille 
+# Réordonner les populations par emmean
+pheno_mean$pop_label <- fct_reorder(pheno_mean$pop_label, pheno_mean$emmean)
+
+# Plot
 ggplot(pheno_mean, aes(x = pop_label, y = emmean, color = population)) +
-  geom_point(size = 1, alpha = 0.8) +           
-  geom_errorbar(aes(ymin = lower.CL, ymax = upper.CL),    
-                width = 0.1, alpha = 0.5) +
+  geom_point(size = 1, alpha = 0.8) +
+  geom_errorbar(aes(ymin = lower.CL, ymax = upper.CL), width = 0.1, alpha = 0.5) +
   theme_classic() +
   labs(
-    x = "lines",
+    x = "Population",
     y = "Estimated mean",
-    title = "Trait means with 95% confidence intervals by population"
+    title = "Trait mean with 95% confidence intervals by population"
   ) +
   theme(
-    axis.text.x = element_text(angle = 45, hjust = 1, size=2),
+    axis.text.x = element_text(angle = 45, hjust = 1, size = 2)  # taille modifiée pour lisibilité
   )
+
+ggplot(pheno_mean, aes(x = emmean)) +
+  geom_histogram(aes(y = ..density..), 
+                 binwidth = 0.002, fill = "skyblue", color = "black", alpha = 0.6) +
+  geom_density(color = "red", size = 1) +
+  theme_classic() +
+  labs(x = "Estimated mean", y = "Density",
+       title = "Distribution of emmean with density curve")
+
+qqnorm(pheno_mean$emmean)
+qqline(pheno_mean$emmean, col = "red", lwd = 2)
+
+shapiro.test(pheno_mean$emmean)
 
 ## ===============================
 ## GWAS
@@ -359,7 +374,26 @@ ggplot(gemma_results, aes(x = ps, y = -log10(p_wald))) +
 
 
 
+Meff <- length(readLines("plink_pruning/pruning01/CeMEE.pruned.0.1.prune.in"))
+eigen_threshold <- 0.05 / Meff #bonferroni mais avec SNP prunées
 
 
+ggplot(gemma_results, aes(x = ps, y = -log10(p_wald))) +
+  geom_point(aes(color = p_wald < eigen_threshold),
+             size = 0.6, alpha = 0.8) +
+  facet_wrap(~ chr, scales = "free_x", nrow = 1) +
+  scale_color_manual(values = c("TRUE"="red", "FALSE"="grey70")) +
+  geom_hline(yintercept = -log10(eigen_threshold),
+             linetype = "dashed",
+             color = "blue") +
+  theme_classic()
 
-
+ggplot(gemma_var_results, aes(x = ps, y = -log10(p_wald))) +
+  geom_point(aes(color = p_wald < eigen_threshold),
+             size = 0.6, alpha = 0.8) +
+  facet_wrap(~ chr, scales = "free_x", nrow = 1) +
+  scale_color_manual(values = c("TRUE"="red", "FALSE"="grey70")) +
+  geom_hline(yintercept = -log10(eigen_threshold),
+             linetype = "dashed",
+             color = "blue") +
+  theme_classic()

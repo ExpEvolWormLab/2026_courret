@@ -16,6 +16,7 @@ library(broom)
 library(qqman)
 library(car)
 library(performance)
+library(forcats)
 
 ## ===============================
 ## 1.2 Visualisation brute
@@ -208,11 +209,13 @@ pheno_var <- pheno_var %>%
   )
 
 
-#plot de la taille 
+# Réordonner les populations par emmean
+pheno_var$pop_label <- fct_reorder(pheno_var$pop_label, pheno_var$emmean)
+
+# Plot
 ggplot(pheno_var, aes(x = pop_label, y = emmean, color = population)) +
-  geom_point(size = 1, alpha = 0.8) +                     
-  geom_errorbar(aes(ymin = lower.CL, ymax = upper.CL),     
-                width = 0.1, alpha = 0.5) +
+  geom_point(size = 1, alpha = 0.8) +
+  geom_errorbar(aes(ymin = lower.CL, ymax = upper.CL), width = 0.1, alpha = 0.5) +
   theme_classic() +
   labs(
     x = "Population",
@@ -220,8 +223,21 @@ ggplot(pheno_var, aes(x = pop_label, y = emmean, color = population)) +
     title = "Trait var with 95% confidence intervals by population"
   ) +
   theme(
-    axis.text.x = element_text(angle = 45, hjust = 1, size= 2),  
+    axis.text.x = element_text(angle = 45, hjust = 1, size = 2)  # taille modifiée pour lisibilité
   )
+
+ggplot(pheno_var, aes(x = emmean)) +
+  geom_histogram(aes(y = ..density..), 
+                 binwidth = 0.000002, fill = "skyblue", color = "black", alpha = 0.6) +
+  geom_density(color = "red", size = 1) +
+  theme_classic() +
+  labs(x = "Estimated var", y = "Density",
+       title = "Distribution of emmean with density curve")
+
+qqnorm(pheno_var$emmean)
+qqline(pheno_var$emmean, col = "red", lwd = 2)
+
+shapiro.test(pheno_var$emmean)
 
 
 
@@ -342,6 +358,4 @@ ggplot(gemma_var_results, aes(x = ps, y = -log10(p_wald))) +
     legend.position = "none",
     axis.text.x = element_text(angle = 45, hjust = 1, size = 8)
   )
-
-
 
