@@ -397,3 +397,61 @@ ggplot(gemma_var_results, aes(x = ps, y = -log10(p_wald))) +
              linetype = "dashed",
              color = "blue") +
   theme_classic()
+
+
+
+
+###################### permutations 
+
+gemma_results <- read.table("output/gwas_results.assoc.txt", header = TRUE, sep = "", stringsAsFactors = FALSE)
+
+real_p <- gemma_results$p_wald
+snp_ids <- gemma_results$rs
+n_snp <- length(real_p)
+
+n_perm <- 100
+perm_matrix <- matrix(NA, nrow = n_snp, ncol = n_perm)
+colnames(perm_matrix) <- paste0("perm_", 1:n_perm)
+rownames(perm_matrix) <- snp_ids
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+perm_threshold_snp <- apply(perm_matrix, 1, quantile, probs = 0.05)
+
+significant_snp <- real_p < perm_threshold_snp
+
+final_table <- data.frame(
+  SNP = snp_ids,
+  p_real = real_p,
+  perm_threshold_5perc = perm_threshold_snp,
+  significant = significant_snp
+)
+
+write.table(final_table,
+            "permutation_results_100.txt",
+            sep="\t",
+            row.names=FALSE,
+            quote=FALSE)
+

@@ -122,6 +122,15 @@ phen_data_step1$area.F.var_corr2 <- predict(var_model_corr) # mean corr
 phen_data_step1$area.F.var_corr = predict(var_model) #mean non corr
 plot(phen_data_step1$area.F.var_corr, phen_data_step1$area.F.var_corr2)
 
+plot(phen_data_step1$area.F.var, phen_data_step1$area.F.var_corr)
+
+sd(phen_data_step1$area.F.var_corr)
+sd(phen_data_step1$area.F.var)
+
+abline(v=mean(phen_data_step1$area.F.var)+3*mean(phen_data_step1$area.F.var))
+
+
+
 #3 coefficient of variation (CV)
 
 phen_data_step1$CV_areaF <- (sqrt(phen_data_step1$area.F.var_corr) / phen_data_step1$area.F.mean_corr)*100
@@ -225,6 +234,14 @@ ggplot(pheno_var, aes(x = pop_label, y = emmean, color = population)) +
   theme(
     axis.text.x = element_text(angle = 45, hjust = 1, size = 2)  # taille modifiée pour lisibilité
   )
+
+ggplot(pheno_var, aes(x = log(emmean))) +
+  geom_histogram(aes(y = ..density..), 
+                 binwidth = 0.02, fill = "skyblue", color = "black", alpha = 0.6) +
+  geom_density(color = "red", size = 1) +
+  theme_classic() +
+  labs(x = "Estimated var", y = "Density",
+       title = "Distribution of emmean with density curve")
 
 ggplot(pheno_var, aes(x = emmean)) +
   geom_histogram(aes(y = ..density..), 
