@@ -19,7 +19,7 @@ for i in $(seq 1 10); do
             -k data/kinship.txt \
             -lmm 4 \
             -p data/pheno_perm_${perm}.txt \
-            -o perm_$perm \
+            -o output/perm_$perm \
             > output/perm_$perm.txt &
 
         perm=$((perm + 1))
