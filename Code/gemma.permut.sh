@@ -4,10 +4,10 @@ mkdir -p output
 
 perm=1
 
-for i in $(seq 1 10); do
+for i in $(seq 1 50); do
     echo "Boucle $i"
 
-    for j in $(seq 1 100); do
+    for j in $(seq 1 20); do
         echo "Permutation $perm"
 
         # Randomiser phénotype
