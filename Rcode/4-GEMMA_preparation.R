@@ -1,10 +1,16 @@
-rm(list=ls())
-gc()
+############################################################
+## ISOGNIC LINES + DATA FOR GEMMA – area.F / area.F.var
+## C. elegans – CeMEE panel
+############################################################
+
+## ===============================
+## 0. Packages
+## ===============================
+
 library(AGHmatrix)
 library(data.table)
-#
-# load the phenotypes
 
+# Load the phenotypes
 pheno_mean <- read.table("data/pheno_mean.txt")
 pheno_var <- read.table("data/pheno_var.txt")
 
@@ -12,7 +18,9 @@ pheno_var <- read.table("data/pheno_var.txt")
 removed_isotypes <- read.table("data/removed_isotypes_Cemee_2025.txt")
 corr_isotypes <- read.csv("data/correspondance_isotypes.csv")
 
-dim(corr_isotypes)
+## ===============================
+## 1. Isogenic lines 
+## ===============================
 
 ### Remove the additional name info
 removed_isotypes$V1 <- gsub('CeMee', '', removed_isotypes$V1)
@@ -31,6 +39,10 @@ replaced_iso <- subset(corr_isotypes,Line%in%removed_isotypes$V1)
 ### We will use the bimbam format which is simple for GEMMA
 ## First load the genotypes
 ## Load Cemee data
+
+## ===============================
+## 1.1 Cemee data 
+## ===============================
 
 vcf <- read.vcfR("data/Cemee2025.imputed.SNP.filtered.final_renamed.vcf.gz")
 vcf@fix
@@ -62,10 +74,7 @@ for(i in genotyped_lines){
     phenotyped_lines[k]=FALSE
   }else{
   temp_pheno <- subset(pheno_var,pop_label%in%all_lines_ID)
-  
-  
   ## Now extract all phenotypic data for these lines
-  
   if(nrow(temp_pheno)==0){
     gemma_pheno=rbind(gemma_pheno,rep(NA,1))
   }else{
@@ -86,11 +95,44 @@ write.table(gemma_pheno,file="data/gemma_pheno_var.txt",sep='\t',quote=FALSE,row
 
 gemma_pheno_withlines=data.frame(gemma_pheno)
 gemma_pheno_withlines$strain=as.character(genotyped_lines[phenotyped_lines])
-
 write.table(gemma_pheno_withlines,file="data/gemma_pheno_withLines_var.txt",sep='\t',quote=FALSE,row.names=FALSE,col.names=FALSE)
 
 
-### Compute a GRM - étape pruning + kinship matrix 
+
+pheno_variso <- fread("data/gemma_pheno_withLines_var.txt", header = F)
+pheno_meaniso <- fread("data/gemma_pheno_withLines.txt", header = F)
+
+
+
+plot(pheno_meaniso$V1,pheno_variso$V1)
+
+ggplot(pheno_meaniso, aes(x = V1)) +
+  geom_histogram(aes(y = ..density..), 
+                 binwidth = 0.002, fill = "skyblue", color = "black", alpha = 0.6) +
+  geom_density(color = "red", size = 1) +
+  theme_classic() +
+  labs(x = "Estimated mean", y = "Density",
+       title = "Distribution of emmean with density curve")
+
+ggplot(pheno_variso, aes(x = V1)) +
+  geom_histogram(aes(y = ..density..), 
+                 binwidth = 0.000002, fill = "skyblue", color = "black", alpha = 0.6) +
+  geom_density(color = "red", size = 1) +
+  theme_classic() +
+  labs(x = "Estimated mean", y = "Density",
+       title = "Distribution of emmean with density curve")
+
+cor(pheno_meaniso$V1,pheno_variso$V1) #cor de 0.14
+
+
+
+
+
+
+
+## ===============================
+## 2. Data for GEMMA (kinship matrix + pruning)
+## ===============================
 
 # créer dossier
 system("mkdir -p plink_pruning/pruning01")
@@ -112,7 +154,6 @@ strainID <- tstrsplit(colnames(genotype_pruned@gt)[2:1002],'_')[[1]]
 GRM <- Gmatrix((genotype_pruned_matrix), method="VanRaden")
 dim(GRM)
 ## Re-order
-
 GRM_sub = GRM[strainID %in% colnames(genotype_info_kept),strainID %in% colnames(genotype_info_kept)]
 strainID_sub = strainID[strainID %in% colnames(genotype_info_kept)]
 table(strainID_sub==colnames(genotype_info_kept)) # Same order
@@ -123,15 +164,3 @@ head(gemma_pheno)
 write.table(GRM_sub,file="data/kinship.txt",sep='\t',quote=FALSE,row.names=FALSE,col.names=FALSE)
 
 
-
-### Run Gemma
-###
-# Use the latest installed gemma version - use BIMBAM format
-#conda activate gemma-env 
-
-### Only takes one column at a time
-#for i in 2 3 4 5 6 7 8 9 10 11 12 13 14
-#do
-#cut -f $i data_BLUE/gemma_pheno.txt > data_BLUE/split/gemma_pheno_T${i}.txt
-#nohup gemma -g data_BLUE/genotypes_for_gemma.txt -k data_BLUE/kinship.txt -lmm 4 -p data_BLUE/split/gemma_pheno_T${i}.txt -o gwas_results_BLUE_T${i} > gemma_output_BLUE_txt/output_gemma_t${i}.txt &
-#done
