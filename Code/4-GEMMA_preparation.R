@@ -11,8 +11,9 @@ library(AGHmatrix)
 library(data.table)
 
 # Load the phenotypes
-pheno_mean <- read.table("data/pheno_mean.txt")
-pheno_var <- read.table("data/pheno_var.txt")
+pheno_mean <- read.table("data/pheno_mean.txt", header = T)
+pheno_var <- read.table("data/pheno_var.txt", header = T)
+pheno_CV <- read.table("data/pheno_CV.txt", header = T)
 
 # Load the isotype information
 removed_isotypes <- read.table("data/removed_isotypes_Cemee_2025.txt")
@@ -59,7 +60,7 @@ snp_positions <- snp_positions[order(snp_positions$CHROM,snp_positions$POS),]
 
 ## Order the genotype - keep shared lines
 genotyped_lines <- colnames(genotype_info)
-all_lines <- sort(unique(pheno_var$pop_label)) # pour la moyenne / var
+all_lines <- sort(unique(pheno_CV$pop_label)) # pour la moyenne / var / CV
 phenotyped_lines = rep(TRUE,length(genotyped_lines))
 gemma_pheno <- NULL
 ### Now we will create the phenotype file for GEMMA
@@ -70,10 +71,10 @@ for(i in genotyped_lines){
   temp_iso <- subset(replaced_iso,i==Line | i==Representant_line)
   all_lines_ID <- unique(c(i,temp_iso$Line,temp_iso$Representant_line))
   # Phenotyped once ?
-  if(sum(pheno_var$pop_label%in%all_lines_ID)==0){
+  if(sum(pheno_CV$pop_label%in%all_lines_ID)==0){ # pour la moyenne / var / CV
     phenotyped_lines[k]=FALSE
   }else{
-  temp_pheno <- subset(pheno_var,pop_label%in%all_lines_ID)
+  temp_pheno <- subset(pheno_CV,pop_label%in%all_lines_ID) # pour la moyenne / var / CV
   ## Now extract all phenotypic data for these lines
   if(nrow(temp_pheno)==0){
     gemma_pheno=rbind(gemma_pheno,rep(NA,1))
@@ -90,21 +91,26 @@ genotype_info_kept <- genotype_info[,phenotyped_lines]
 
 bimbam <- data.frame(id=snp_positions$ID,major=snp_positions$REF,minor=snp_positions$ALT)
 bimbam <- cbind(bimbam,genotype_info_kept)
-write.table(bimbam,"data/genotypes_for_gemma_var.txt",row.names=FALSE,col.names=FALSE,quote=FALSE) # table geno
-write.table(gemma_pheno,file="data/gemma_pheno_var.txt",sep='\t',quote=FALSE,row.names=FALSE,col.names=FALSE) #table pheno
+write.table(bimbam,"data/genotypes_for_gemma_CV.txt",row.names=FALSE,col.names=FALSE,quote=FALSE) # table geno
+write.table(gemma_pheno,file="data/gemma_pheno_CV.txt",sep='\t',quote=FALSE,row.names=FALSE,col.names=FALSE) #table pheno
 
 gemma_pheno_withlines=data.frame(gemma_pheno)
 gemma_pheno_withlines$strain=as.character(genotyped_lines[phenotyped_lines])
-write.table(gemma_pheno_withlines,file="data/gemma_pheno_withLines_var.txt",sep='\t',quote=FALSE,row.names=FALSE,col.names=FALSE)
+write.table(gemma_pheno_withlines,file="data/gemma_pheno_withLines_CV.txt",sep='\t',quote=FALSE,row.names=FALSE,col.names=FALSE)
 
+## ===============================
+## 1.2 Distribution of data
+## ===============================
 
-
-pheno_variso <- fread("data/gemma_pheno_withLines_var.txt", header = F)
-pheno_meaniso <- fread("data/gemma_pheno_withLines.txt", header = F)
+pheno_variso <- fread("data/gemma_pheno_withLines_var.txt")
+pheno_meaniso <- fread("data/gemma_pheno_withLines.txt")
+pheno_CViso <- fread("data/gemma_pheno_withLines_CV.txt")
 
 
 
 plot(pheno_meaniso$V1,pheno_variso$V1)
+plot(pheno_meaniso$V1, pheno_CViso$V1)
+plot(pheno_variso$V1, pheno_CViso$V1)
 
 ggplot(pheno_meaniso, aes(x = V1)) +
   geom_histogram(aes(y = ..density..), 
@@ -114,19 +120,43 @@ ggplot(pheno_meaniso, aes(x = V1)) +
   labs(x = "Estimated mean", y = "Density",
        title = "Distribution of emmean with density curve")
 
-ggplot(pheno_variso, aes(x = V1)) +
+ggplot(pheno_variso, aes(x = log(V1))) +
   geom_histogram(aes(y = ..density..), 
-                 binwidth = 0.000002, fill = "skyblue", color = "black", alpha = 0.6) +
+                 binwidth = 0.02, fill = "skyblue", color = "black", alpha = 0.6) +
   geom_density(color = "red", size = 1) +
   theme_classic() +
-  labs(x = "Estimated mean", y = "Density",
+  labs(x = "Estimated variance", y = "Density",
        title = "Distribution of emmean with density curve")
 
 cor(pheno_meaniso$V1,pheno_variso$V1) #cor de 0.14
+cor(pheno_meaniso$V1, pheno_CViso$V1) # cor de -0.5
+cor(pheno_variso$V1, pheno_CViso$V1) # cor de 0.6
 
+log_emmeaniso_var=log(pheno_variso$V1)
+plot(pheno_meaniso$V1, log_emmeaniso_var)
 
+log_emmeaniso_CV=log(pheno_CViso$V1)
+plot(pheno_variso$V1, log_emmeaniso_CV)
 
+plot(log_emmeaniso_var, log_emmeaniso_CV)
+cor(log_emmeaniso_var, log_emmeaniso_CV) #cor de 0.5
 
+#CV
+ggplot(pheno_CViso, aes(x = V1)) +
+  geom_histogram(aes(y = ..density..), 
+                 binwidth = 0.2, fill = "skyblue", color = "black", alpha = 0.6) +
+  geom_density(color = "red", size = 1) +
+  theme_classic() +
+  labs(x = "CV", y = "Density",
+       title = "Distribution of CV with density curve")
+
+ggplot(pheno_CViso, aes(x = log(V1))) +
+  geom_histogram(aes(y = ..density..), 
+                 binwidth = 0.02, fill = "skyblue", color = "black", alpha = 0.6) +
+  geom_density(color = "red", size = 1) +
+  theme_classic() +
+  labs(x = "log(CV)", y = "Density",
+       title = "Distribution of CV with density curve")
 
 
 

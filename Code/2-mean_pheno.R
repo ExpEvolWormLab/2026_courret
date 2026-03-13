@@ -35,7 +35,7 @@ phen_data_NGM <- phen_data %>%
     pop_label  = factor(pop_label)
   )
 
-## 1.2 Outliers 
+## 1.2 Outliers de variance
 mean_pheno.varA <- mean(phen_data_NGM$area.F.var, na.rm = TRUE)
 sd_pheno.varA <- sd(phen_data_NGM$area.F.var, na.rm = TRUE)
 cutoff <- 3

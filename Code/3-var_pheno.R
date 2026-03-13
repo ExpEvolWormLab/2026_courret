@@ -45,7 +45,37 @@ ggplot(phen_data_NGM, aes(x = area.F, y = log(area.F.var))) +
   theme_classic() 
 ggplot(phen_data_NGM, aes(x = area.F, y = area.F.var)) +
   geom_point(alpha = 0.3) +
-  theme_classic() 
+  theme_classic()
+
+ggplot(phen_data_NGM, aes(x = area.F.var)) +
+  geom_histogram(aes(y = ..density..), 
+                 binwidth = 0.000002, fill = "skyblue", color = "black", alpha = 0.6) +
+  geom_density(color = "red", size = 1) +
+  theme_classic() +
+  labs(x = "Estimated var", y = "Density",
+       title = "Distribution of emmean with density curve")
+
+
+
+highlight_pops <- c("LR3L107", "LR3L84", 
+                    "LR3L105", "GA150L22", 
+                    "CA150L23", "CA1100L77")
+ggplot() +
+  # Tous les points en gris
+  geom_point(data = phen_data_NGM,
+             aes(x = area.F, y = area.F.var),
+             color = "grey80",
+             alpha = 0.4) +
+  
+  # Les 9 points par-dessus
+  geom_point(data = subset(phen_data_NGM, 
+                           pop_label %in% highlight_pops),
+             aes(x = area.F, y = area.F.var, color = pop_label),
+             size = 3) +
+  
+  theme_classic()
+
+
 
 #logD
 ggplot(phen_data_NGM, aes(x = logD, y = area.F.var)) +
@@ -87,6 +117,53 @@ ggplot(phen_data_NGM,
   geom_jitter(width = 0.2, alpha = 0.7) +
   theme_classic() 
 
+
+ggplot() +
+  # Tous les points en gris
+  geom_jitter(data = phen_data_NGM,
+              aes(x = session_id, y = area.F.var),
+              width = 0.2,
+              color = "grey80",
+              alpha = 0.5) +
+  
+  # Les 9 points au-dessus, colorés par session
+  geom_jitter(data = subset(phen_data_NGM, 
+                            pop_label %in% highlight_pops),
+              aes(x = session_id, 
+                  y = area.F.var,
+                  color = pop_label),
+              width = 0.2,
+              size = 3) +
+  
+  theme_classic()
+
+head(
+  phen_data_NGM[order(-phen_data_NGM$area.F.var), 
+                c("pop_label", "area.F.var")],
+  15
+)
+
+head(
+  phen_data_NGM[order(-phen_data_NGM$area.F.var), 
+                c("pop_label", "area.F.var", "exper_data_id", "block_id")],
+  15
+)
+
+
+head(
+  phen_data_NGM[
+    phen_data_NGM$pop_label %in% highlight_pops,
+    c("pop_label", "exper_data_id")
+  ]
+)
+
+head(
+  phen_data_NGM[
+    phen_data_NGM$pop_label %in% highlight_pops,
+    c("pop_label", "exper_data_id")
+  ],
+  9
+)
 ## ===============================
 ## 1.3 Variance models
 ## ===============================
@@ -131,33 +208,41 @@ Anova(var_model_corr)
 
 check_model(var_model_corr)
 
-
-
-
-
+# graph distribution
 
 phen_data_NGM$area.F.var_corr = predict(var_model) #mean non corr
-phen_data_NGM$area.F.var_corr2 <- predict(var_model_corr) # mean corr
+#phen_data_NGM$area.F.var_corr2 <- predict(var_model_corr) # mean corr
 
-phen_data_NGM$area.F.mean_corr = predict(mean_model)
-plot(phen_data_NGM$area.F.var_corr, phen_data_NGM$area.F.var_corr2)
+plot(phen_data_NGM$area.F.var_corr, phen_data_NGM$area.F.var_corr2) #pareil donc je garde avec mean non corrigé
 
 plot(phen_data_NGM$area.F.var, phen_data_NGM$area.F.var_corr)
 
-sd(phen_data_NGM$area.F.var_corr)
-sd(phen_data_NGM$area.F.var)
-
-abline(v=mean(phen_data_NGM$area.F.var)+3*mean(phen_data_NGM$area.F.var))
-
-plot(phen_data_NGM$area.F, phen_data_NGM$area.F.var)
-
 #3  Coefficient of variation (CV)
 
-phen_data_NGM$CV_areaF <- (sqrt(phen_data_NGM$area.F.var_corr) / phen_data_NGM$area.F.mean_corr)*100
+phen_data_NGM$CV_areaF <- (sqrt(phen_data_NGM$area.F.var) / phen_data_NGM$area.F)*100
 
-#ggplot(phen_data_NGM, aes(x = area.F.mean_corr, y = sqrt(area.F.var_corr))) +
-#  geom_point(alpha = 0.3) +
-#  theme_classic() 
+CV_model <- lmer(
+  CV_areaF ~
+    logD + #without mean
+    temperature +
+    rel_humidity +
+    pop_label +
+    (1 | session_id/block_id),
+  data = phen_data_NGM,
+  REML = TRUE
+)
+
+summary(CV_model)
+Anova(CV_model)
+
+check_model(CV_model)
+
+phen_data_NGM$CV=predict(CV_model)
+
+plot(phen_data_NGM$area.F, phen_data_NGM$area.F.mean_corr)
+
+plot(phen_data_NGM$CV_areaF, phen_data_NGM$area.F.var_corr)
+plot(phen_data_NGM$CV_areaF, phen_data_NGM$area.F.mean_corr)
 
 ## ===============================
 ## 1.4 Residuals
@@ -208,7 +293,7 @@ ggplot(phen_data_NGM,
   theme_classic()
 
 ## ===============================
-## 2. EMMEANS
+## 2. EMMEANS - variance
 ## ===============================
 
 pheno_line_var <- emmeans(var_model, "pop_label")
@@ -264,19 +349,87 @@ ggplot(pheno_var, aes(x = emmean)) +
   labs(x = "Estimated var", y = "Density",
        title = "Distribution of emmean with density curve")
 
-# Normality of mean
+# Normality of variance
 qqnorm(pheno_var$emmean)
 qqline(pheno_var$emmean, col = "red", lwd = 2)
 
 shapiro.test(pheno_var$emmean)
 
-
 ## ===============================
 ## 2.2  Correlation between mean-variance
 ## ===============================
 
-plot(pheno_mean$emmean, pheno_var$emmean)
+log_emmean_var=log(pheno_var$emmean)
+plot(pheno_mean$emmean, log_emmean_var) #log de var
+
+plot(pheno_mean$emmean, pheno_var$emmean) #var
+
 cor(pheno_mean$emmean, pheno_var$emmean) # corr de 0.15
 
 
+## ===============================
+## 3. EMMEAN - CV
+## ===============================
 
+pheno_line_CV <- emmeans(CV_model, "pop_label")
+pheno_CV <- as.data.frame(pheno_line_CV)
+
+pheno_CV <- pheno_CV %>%
+  mutate(
+    population = ifelse(
+      substr(pop_label, 1, 3) %in% c("SMR", "SLR"),
+      substr(pop_label, 1, 3),
+      substr(pop_label, 1, 2)
+    ),
+    population2 = str_extract(pop_label, ".*(?=L)")
+  )
+
+write.table(pheno_CV, file = "pheno_CV.txt", row.names = FALSE, col.names = T, quote = FALSE)
+
+## ===============================
+## 3.1  Distribution of CV
+## ===============================
+
+#histogram CV
+ggplot(pheno_CV, aes(x = emmean)) +
+  geom_histogram(aes(y = ..density..), 
+                 binwidth = 0.2, fill = "skyblue", color = "black", alpha = 0.6) +
+  geom_density(color = "red", size = 1) +
+  theme_classic() +
+  labs(x = "CV", y = "Density",
+       title = "Distribution of CV with density curve")
+
+# histogram log(CV)
+ggplot(pheno_CV, aes(x = log(emmean))) +
+  geom_histogram(aes(y = ..density..), 
+                 binwidth = 0.02, fill = "skyblue", color = "black", alpha = 0.6) +
+  geom_density(color = "red", size = 1) +
+  theme_classic() +
+  labs(x = "log(CV)", y = "Density",
+       title = "Distribution of CV with density curve")
+
+
+# plot of line/ populations
+pheno_CV$pop_label <- fct_reorder(pheno_CV$pop_label, pheno_CV$emmean) # Réordonner les populations par emmean
+ggplot(pheno_CV, aes(x = pop_label, y = emmean)) +
+  geom_point(size = 1, alpha = 0.8) +
+  geom_errorbar(aes(ymin = lower.CL, ymax = upper.CL), width = 0.1, alpha = 0.5) +
+  theme_classic() +
+  labs(
+    x = "Population",
+    y = "CV",
+    title = "Trait var with 95% confidence intervals by population"
+  ) +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1, size = 2)  
+  )
+
+## ===============================
+## 3.2  Correlation with CV
+## ===============================
+
+plot(pheno_mean$emmean, pheno_CV$emmean)
+cor(pheno_mean$emmean, pheno_CV$emmean) # corr de 0.02
+
+plot(pheno_var$emmean, pheno_CV$emmean)
+cor(pheno_var$emmean, pheno_CV$emmean) # corr de 0.02
