@@ -106,8 +106,6 @@ pheno_variso <- fread("data/gemma_pheno_withLines_var.txt")
 pheno_meaniso <- fread("data/gemma_pheno_withLines.txt")
 pheno_CViso <- fread("data/gemma_pheno_withLines_CV.txt")
 
-
-
 plot(pheno_meaniso$V1,pheno_variso$V1)
 plot(pheno_meaniso$V1, pheno_CViso$V1)
 plot(pheno_variso$V1, pheno_CViso$V1)
@@ -129,8 +127,8 @@ ggplot(pheno_variso, aes(x = log(V1))) +
        title = "Distribution of emmean with density curve")
 
 cor(pheno_meaniso$V1,pheno_variso$V1) #cor de 0.14
-cor(pheno_meaniso$V1, pheno_CViso$V1) # cor de -0.5
-cor(pheno_variso$V1, pheno_CViso$V1) # cor de 0.6
+cor(pheno_meaniso$V1, pheno_CViso$V1) # cor de -0.47
+cor(pheno_variso$V1, pheno_CViso$V1) # cor de 0.0.75
 
 log_emmeaniso_var=log(pheno_variso$V1)
 plot(pheno_meaniso$V1, log_emmeaniso_var)
@@ -139,7 +137,7 @@ log_emmeaniso_CV=log(pheno_CViso$V1)
 plot(pheno_variso$V1, log_emmeaniso_CV)
 
 plot(log_emmeaniso_var, log_emmeaniso_CV)
-cor(log_emmeaniso_var, log_emmeaniso_CV) #cor de 0.5
+cor(log_emmeaniso_var, log_emmeaniso_CV) #cor de 0.73
 
 #CV
 ggplot(pheno_CViso, aes(x = V1)) +
@@ -158,7 +156,19 @@ ggplot(pheno_CViso, aes(x = log(V1))) +
   labs(x = "log(CV)", y = "Density",
        title = "Distribution of CV with density curve")
 
+#log-tranformation for GEMMA (CV and variance)
 
+pheno_variso_gemma <- fread("data/gemma_pheno_var.txt")
+pheno_CViso_gemma <- fread("data/gemma_pheno_CV.txt")
+
+str(pheno_CViso_gemma)
+str(pheno_variso_gemma)
+
+pheno_CViso_gemma$log_V1 <- log(pheno_CViso_gemma$V1)
+pheno_variso_gemma$log_V1 <- log(pheno_variso_gemma$V1)
+
+write.table(pheno_CViso_gemma$log_V1, "gemma_pheno_log_CV.txt",sep='\t', row.names = FALSE, col.names = FALSE, quote = FALSE)
+write.table(pheno_variso_gemma$log_V1, "gemma_pheno_log_var.txt",sep='\t', row.names = FALSE, col.names = FALSE, quote = FALSE)
 
 ## ===============================
 ## 2. Data for GEMMA (kinship matrix + pruning)

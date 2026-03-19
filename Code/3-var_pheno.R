@@ -384,7 +384,7 @@ pheno_CV <- pheno_CV %>%
     population2 = str_extract(pop_label, ".*(?=L)")
   )
 
-write.table(pheno_CV, file = "pheno_CV.txt", row.names = FALSE, col.names = T, quote = FALSE)
+write.table(pheno_CV, file = "data/pheno_CV.txt", row.names = FALSE, col.names = T, quote = FALSE)
 
 ## ===============================
 ## 3.1  Distribution of CV
@@ -411,7 +411,7 @@ ggplot(pheno_CV, aes(x = log(emmean))) +
 
 # plot of line/ populations
 pheno_CV$pop_label <- fct_reorder(pheno_CV$pop_label, pheno_CV$emmean) # Réordonner les populations par emmean
-ggplot(pheno_CV, aes(x = pop_label, y = emmean)) +
+ggplot(pheno_CV, aes(x = pop_label, y = emmean, color=population)) +
   geom_point(size = 1, alpha = 0.8) +
   geom_errorbar(aes(ymin = lower.CL, ymax = upper.CL), width = 0.1, alpha = 0.5) +
   theme_classic() +
@@ -429,7 +429,7 @@ ggplot(pheno_CV, aes(x = pop_label, y = emmean)) +
 ## ===============================
 
 plot(pheno_mean$emmean, pheno_CV$emmean)
-cor(pheno_mean$emmean, pheno_CV$emmean) # corr de 0.02
+cor(pheno_mean$emmean, pheno_CV$emmean) # corr de -0.46
 
 plot(pheno_var$emmean, pheno_CV$emmean)
-cor(pheno_var$emmean, pheno_CV$emmean) # corr de 0.02
+cor(pheno_var$emmean, pheno_CV$emmean) # corr de 0.74
