@@ -11,16 +11,16 @@ for i in $(seq 1 50); do
         echo "Permutation $perm"
 
         # Randomiser phénotype
-        shuf data/gemma_pheno.txt > data/pheno_perm_${perm}.txt
+        shuf data/gemma_pheno_log_var.txt > data/pheno_log_var_perm_${perm}.txt
 
         # Lancer GEMMA en arrière-plan
         gemma \
             -g data/genotypes_for_gemma.txt \
             -k data/kinship.txt \
             -lmm 4 \
-            -p data/pheno_perm_${perm}.txt \
-            -o perm_$perm \
-            > output/perm_$perm.txt &
+            -p data/pheno_log_var_perm_${perm}.txt \
+            -o perm_log_var_$perm \
+            > output/perm_log_var_$perm.txt &
 
         perm=$((perm + 1))
     done

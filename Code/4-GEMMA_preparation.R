@@ -15,6 +15,8 @@ pheno_mean <- read.table("data/pheno_mean.txt", header = T)
 pheno_var <- read.table("data/pheno_var.txt", header = T)
 pheno_CV <- read.table("data/pheno_CV.txt", header = T)
 
+str(pheno_CV)
+
 # Load the isotype information
 removed_isotypes <- read.table("data/removed_isotypes_Cemee_2025.txt")
 corr_isotypes <- read.csv("data/correspondance_isotypes.csv")
@@ -171,7 +173,17 @@ write.table(pheno_CViso_gemma$log_V1, "gemma_pheno_log_CV.txt",sep='\t', row.nam
 write.table(pheno_variso_gemma$log_V1, "gemma_pheno_log_var.txt",sep='\t', row.names = FALSE, col.names = FALSE, quote = FALSE)
 
 ## ===============================
-## 2. Data for GEMMA (kinship matrix + pruning)
+## 2. Data for permGWAS
+## ===============================
+
+#pas de log-transformation
+#juste genotype et phenotype
+
+
+
+
+## ===============================
+## 3. Data for GEMMA (kinship matrix + pruning)
 ## ===============================
 
 # créer dossier

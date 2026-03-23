@@ -1,5 +1,5 @@
 ## ===============================
-## GWAS
+## mGWAS
 ## ===============================
 
 pheno_meaniso <- fread("data/gemma_pheno_withLines.txt")
@@ -101,7 +101,7 @@ ggplot(SNP_mean, aes(x = pos_cum, y = beta)) +
   labs(
     x = "Genomic position",
     y = "SNP effect size (beta)",
-    title = "Genetic effects on body size variance"
+    title = "Genetic effects on body size"
   ) +
   
   scale_color_manual(

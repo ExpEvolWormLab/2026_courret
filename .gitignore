@@ -21,3 +21,4 @@ plot/Rplot01.svg
 plot/Rplot.svg
 output/perm_pwald_matrix.txt
 data/genotypes_for_gemma_CV.txt
+data/genotype_for_permGWAS.csv

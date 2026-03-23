@@ -1,0 +1,1 @@
+python3 permGWAS.py -x ./data/x_matrix.h5 -y ./data/y_matrix.csv -perm 100 -perm_method y
