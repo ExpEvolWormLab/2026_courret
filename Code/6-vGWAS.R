@@ -2,9 +2,11 @@
 ## vGWAS (log)
 ## ===============================
 
+library(ggplot2)
+
 pheno_variso <- fread("data/gemma_pheno_withLines_var.txt")
-SNP_perm_var =  fread("output/perm_pwald_var_matrix.txt")
-SNP_var = fread("output/gwas_var_results.assoc.txt")
+SNP_perm_var =  fread("output/perm_log_var_pwald_matrix.txt")
+SNP_var = fread("output/gwas_log_var_results.assoc.txt")
 
 
 str(pheno_variso)
@@ -70,6 +72,103 @@ ggplot(SNP_var, aes(x = pos_cum, y = logp)) +
   )
 
 
+library(ggplot2)
+library(dplyr)
+
+# Couleurs
+chrom_colors <- c("#B2DF8A", "#CAB2D6")  # alternance vert/violet pastel
+sig_color <- "#E31A1C"  # rouge visible pour les significatifs
+
+# Ajouter un espace entre chromosomes
+SNP_var <- SNP_var %>%
+  arrange(chr, pos_cum) %>%
+  group_by(chr) %>%
+  mutate(pos_cum_chr = pos_cum + (as.numeric(chr)-1) * 1e6) %>%
+  ungroup()
+
+ggplot() +
+  # SNP non significatifs
+  geom_point(
+    data = SNP_var %>% filter(!significant_perm),
+    aes(x = pos_cum_chr, y = logp, color = factor(chr)),
+    size = 0.6,
+    alpha = 0.4
+  ) +
+  # SNP significatifs
+  geom_point(
+    data = SNP_var %>% filter(significant_perm),
+    aes(x = pos_cum_chr, y = logp),
+    color = sig_color,
+    size = 0.6,
+    alpha = 0.6
+  ) +
+  scale_color_manual(values = rep(chrom_colors, length.out = length(unique(SNP_var$chr)))) +
+  theme_classic(base_size = 15) +
+  labs(
+    x = "Genomic position",
+    y = expression(-log[10](italic(p))),
+    title = "GWAS Manhattan Plot — Significant SNPs Highlighted"
+  ) +
+  theme(
+    legend.position = "none",
+    axis.text = element_text(size = 11),
+    axis.title = element_text(size = 13),
+    plot.title = element_text(face = "bold", size = 15, hjust = 0),
+    axis.line = element_line(linewidth = 0.6),
+    axis.ticks = element_line(linewidth = 0.6),
+    panel.grid = element_blank()
+  )
+
+
+
+chrom_labels <- SNP_var %>%
+  group_by(chr) %>%
+  summarise(
+    pos_label = (min(pos_cum_chr) + max(pos_cum_chr)) / 2
+  ) %>%
+  ungroup()
+
+ggplot() +
+  # SNP non significatifs
+  geom_point(
+    data = SNP_var %>% filter(!significant_perm),
+    aes(x = pos_cum_chr, y = logp, color = factor(chr)),
+    size = 0.6,
+    alpha = 0.3
+  ) +
+  # SNP significatifs
+  geom_point(
+    data = SNP_var %>% filter(significant_perm),
+    aes(x = pos_cum_chr, y = logp),
+    color = sig_color,
+    size = 0.6,
+    alpha = 0.6
+  ) +
+  scale_color_manual(values = rep(chrom_colors, length.out = length(unique(SNP_var$chr)))) +
+  scale_x_continuous(
+    breaks = chrom_labels$pos_label,
+    labels = chrom_labels$chr
+  ) +
+  theme_classic(base_size = 15) +
+  labs(
+    x = "Chromosome",
+    y = expression(-log[10](italic(p))),
+    title = "GWAS variance"
+  ) +
+  theme(
+    legend.position = "none",
+    axis.text.x = element_text(size = 11, face = "bold"),
+    axis.text.y = element_text(size = 11),
+    axis.title = element_text(size = 13),
+    plot.title = element_text(face = "bold", size = 15, hjust = 0),
+    axis.line = element_line(linewidth = 0.6),
+    axis.ticks = element_line(linewidth = 0.6),
+    panel.grid = element_blank()
+  )
+
+
+
+
 ggplot(SNP_var, aes(x = pos_cum, y = beta)) +
   
   # SNP non significatifs (fond)
@@ -128,7 +227,7 @@ ggplot(SNP_var, aes(x = pos_cum, y = beta)) +
 ####### pour chr 1
 
 # Filtrer uniquement le chromosome 1
-SNP_chr1 <- SNP_var[chr == "I"]
+SNP_chr1 <- SNP_var[chr == "X"]
 
 ggplot(SNP_chr1, aes(x = pos_cum, y = logp)) +
   
