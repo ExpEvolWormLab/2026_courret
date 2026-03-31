@@ -17,6 +17,8 @@ library(matrixStats)
 ## ===============================
 
 phen_data <- fread("data/all_phenotypes_from_movies_fixed.txt", sep = "\t", header = TRUE)
+str(phen_data)
+
 
 ## ===============================
 ## 2. Create experimental variables

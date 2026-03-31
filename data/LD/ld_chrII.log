@@ -1,0 +1,29 @@
+PLINK v1.90p 64-bit (6 Sep 2023)
+Options in effect:
+  --allow-extra-chr
+  --bfile cemee
+  --ld-snp II_3013736
+  --ld-window 99999
+  --ld-window-kb 50000
+  --ld-window-r2 0
+  --out ld_chrII
+  --r2
+
+Hostname: gevwf13.recherche.wifi.biologie.ens.fr
+Working directory: /Users/edouardcourret/Documents/GitHub/2026_courret/data/LD
+Start time: Wed Mar 25 11:11:55 2026
+
+Random number seed: 1774433515
+8192 MB RAM detected; reserving 4096 MB for main workspace.
+317611 variants loaded from .bim file.
+1001 people (0 males, 0 females, 1001 ambiguous) loaded from .fam.
+Ambiguous sex IDs written to ld_chrII.nosex .
+Using up to 8 threads (change this with --threads).
+Before main variant filters, 1001 founders and 0 nonfounders present.
+Calculating allele frequencies... done.
+Total genotyping rate is 0.999958.
+317611 variants and 1001 people pass filters and QC.
+Note: No phenotypes present.
+--r2 to ld_chrII.ld ... done.
+
+End time: Wed Mar 25 11:11:56 2026

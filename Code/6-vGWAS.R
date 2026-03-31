@@ -86,41 +86,6 @@ SNP_var <- SNP_var %>%
   mutate(pos_cum_chr = pos_cum + (as.numeric(chr)-1) * 1e6) %>%
   ungroup()
 
-ggplot() +
-  # SNP non significatifs
-  geom_point(
-    data = SNP_var %>% filter(!significant_perm),
-    aes(x = pos_cum_chr, y = logp, color = factor(chr)),
-    size = 0.6,
-    alpha = 0.4
-  ) +
-  # SNP significatifs
-  geom_point(
-    data = SNP_var %>% filter(significant_perm),
-    aes(x = pos_cum_chr, y = logp),
-    color = sig_color,
-    size = 0.6,
-    alpha = 0.6
-  ) +
-  scale_color_manual(values = rep(chrom_colors, length.out = length(unique(SNP_var$chr)))) +
-  theme_classic(base_size = 15) +
-  labs(
-    x = "Genomic position",
-    y = expression(-log[10](italic(p))),
-    title = "GWAS Manhattan Plot — Significant SNPs Highlighted"
-  ) +
-  theme(
-    legend.position = "none",
-    axis.text = element_text(size = 11),
-    axis.title = element_text(size = 13),
-    plot.title = element_text(face = "bold", size = 15, hjust = 0),
-    axis.line = element_line(linewidth = 0.6),
-    axis.ticks = element_line(linewidth = 0.6),
-    panel.grid = element_blank()
-  )
-
-
-
 chrom_labels <- SNP_var %>%
   group_by(chr) %>%
   summarise(
@@ -266,9 +231,31 @@ ggplot(SNP_chr1, aes(x = pos_cum, y = logp)) +
 
 
 
+#volcano plot
 
-
-
+ggplot(SNP_var, aes(x = beta, y = logp)) +
+  
+  geom_point(
+    data = SNP_var[significant_perm == FALSE],
+    color = "grey80",
+    size = 0.6,
+    alpha = 0.6
+  ) +
+  
+  geom_point(
+    data = SNP_var[significant_perm == TRUE],
+    color = "#E31A1C",
+    size = 1.2,
+    alpha = 0.9
+  ) +
+  
+  theme_classic(base_size = 15) +
+  
+  labs(
+    x = "Effect size (beta)",
+    y = expression(-log[10](italic(p))),
+    title = "Volcano plot — Variance GWAS"
+  )
 
 
 

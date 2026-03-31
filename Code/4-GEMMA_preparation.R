@@ -19,7 +19,9 @@ str(pheno_CV)
 
 # Load the isotype information
 removed_isotypes <- read.table("data/removed_isotypes_Cemee_2025.txt")
+str(removed_isotypes)
 corr_isotypes <- read.csv("data/correspondance_isotypes.csv")
+str(corr_isotypes)
 
 ## ===============================
 ## 1. Isogenic lines 

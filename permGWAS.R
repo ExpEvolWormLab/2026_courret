@@ -86,19 +86,6 @@ genotype_info_kept <- genotype_info[,phenotyped_lines]
 # transformer gemma_pheno en vecteur propre
 pheno_vec <- as.numeric(gemma_pheno)
 
-## ===============================
-## 3. Convert genotype (0|0 → 0/1/2)
-## ===============================
-
-convert_geno <- function(x) {
-  if (is.na(x)) return(NA)
-  if (x == "0|0") return(0)
-  if (x %in% c("0|1", "1|0")) return(1)
-  if (x == "1|1") return(2)
-  return(NA)
-}
-
-geno_num <- apply(genotype_info_kept, c(1,2), convert_geno)
 
 ## ===============================
 ## 4. TRANSPOSE (clé pour permGWAS)
@@ -159,6 +146,8 @@ write.csv(pheno_df, "data/phenotype_permGWAS_CV.csv", row.names = FALSE)
 
 # Génotypes déjà convertis (0/1/2)
 geno_raw <- read.csv("data/genotype_for_permGWAS.csv", header = FALSE)
+
+str(geno_raw)
 
 # Phénotype
 pheno_vec <- as.numeric(read.table("data/gemma_pheno_log_var.txt")[,1])
