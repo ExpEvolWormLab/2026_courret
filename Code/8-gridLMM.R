@@ -1,19 +1,7 @@
-install.packages("gridLMM")  
-library(GridLMM)
-library(data.table)
-devtools::install_github('deruncie/GridLMM')
-
-
-# Installer la version GitHub de GridLMM
-devtools::install_github("deruncie/GridLMM", force = TRUE)
-
-
 #exemple Francois 
 gwas.NGM = GridLMM_GWAS(formula = meanTrait ~ 1 +logD + rel_humidity + temperature + (1|date_str) + (1|pop_label) + (1|session_id),
                         test_formula = ~1, data = all_BLUEs_genotyped_NGM, X = genotype_matrix,
                         X_ID = 'pop_label', relmat = list(pop_label = kinship_matrix) ,method = 'REML')
-
-
 
 
 ############################################################
@@ -22,53 +10,17 @@ gwas.NGM = GridLMM_GWAS(formula = meanTrait ~ 1 +logD + rel_humidity + temperatu
 
 rm(list = ls())
 
+devtools::install_github("deruncie/GridLMM")
+library(GridLMM)
 library(data.table)
 
 ## ===============================
 ## 1. LOAD DATA
 ## ===============================
 
-phen_data <- fread("data/all_phenotypes_from_movies_fixed.txt")
+phen_data <- fread("data/phen_data.txt")
 corr_isotypes <- fread("data/correspondance_isotypes.csv")
 removed_isotypes <- fread("data/removed_isotypes_Cemee_2025.txt", header=F)
-
-## ===============================
-## 2. VARIABLES EXPÉRIMENTALES
-## ===============================
-
-# session ID
-phen_data[, session_id := substr(date_str, 1, 4)]
-phen_data[session_id == "2014", session_id := "2013"]
-phen_data[substr(block_id, 1, 1) == "F", session_id := "F"]
-phen_data[substr(block_id, 1, 2) == "SB", session_id := "SB"]
-
-# covariables numériques
-for(i in c("temperature","rel_humidity","logD")){
-  phen_data[, i := as.numeric(get(i))]
-}
-
-## ===============================
-## 3. FILTRAGE
-## ===============================
-
-phen_data <- phen_data[!is.na(pop_label)]
-phen_data <- phen_data[!block_id %in% paste0("B", 200:400)]
-phen_data <- phen_data[!pop_label %in% c("A00", "CX12311L0", "LSJ2L0")]
-
-phen_data <- phen_data[
-  !is.na(temperature) &
-    !is.na(rel_humidity) &
-    !is.na(logD)
-]
-
-## ===============================
-## 4. PHÉNOTYPES D'INTÉRÊT
-## ===============================
-
-phen_data <- phen_data[
-  !is.na(area.F) &
-    !is.na(area.F.var)
-]
 
 ## ===============================
 ## 5. CORRECTION ISOTYPES
@@ -120,13 +72,9 @@ phen_clean <- phen_data[, .(
 ## 7. SAVE PHENOTYPE
 ## ===============================
 
-fwrite(phen_clean, "output/phenotype_clean.txt", sep = "\t")
+fwrite(phen_clean, "data/phenotype_grid.txt", sep = "\t")
 
 str(phen_clean)
-
-cat("✅ Phénotype clean sauvegardé\n")
-cat("Nb lignes:", nrow(phen_clean), "\n")
-cat("Nb individus:", length(unique(phen_clean$pop_label)), "\n")
 
 
 
@@ -147,7 +95,6 @@ vcf <- read.vcfR("data/Cemee2025.imputed.SNP.filtered.final_renamed.vcf.gz")
 ## ===============================
 
 gt <- extract.gt(vcf, element = "GT")
-# garde "0/0", "0/1", etc.
 
 ## ===============================
 ## 3. FORMAT TABLEAU
@@ -168,16 +115,13 @@ setcolorder(geno_dt, c("CHROM", "POS", setdiff(colnames(geno_dt), c("CHROM","POS
 
 fwrite(geno_dt, "output/genotype_raw_GT.txt", sep = "\t")
 
-cat("✅ Génotype brut sauvegardé\n")
-cat("Nb SNPs:", nrow(geno_dt), "\n")
-cat("Nb individus:", ncol(geno_dt) - 2, "\n")
-
 dim(geno)
 
-
+#Sur ordi ENS, transfo en 0,1 ou 2
 geno <- fread("data/genotype_012.txt")
 str(geno)
-
+geno_snp <- geno[, -(1:2)]
+geno_snp <- t(geno_snp) #fichier final
 
 ############################################################
 ## STEP 3 — KINSHIP (VCF + PLINK + vcfR)
@@ -207,112 +151,106 @@ system("bgzip plink_pruning/pruning01/CeMEE.pruned.0.1.vcf")
 genotype_pruned <- read.vcfR("plink_pruning/pruning01/CeMEE.pruned.0.1.vcf.gz")
 
 ## ===============================
-## 3. Convertir en matrice
+## 3. 
 ## ===============================
 
-genotype_pruned_matrix <- apply(genotype_pruned@gt[, -1], 1, function(x){
-  as.numeric(substring(x, 1, 1))
-})
+system("/opt/homebrew/bin/plink --vcf plink_pruning/pruning01/CeMEE.pruned.0.1.vcf.gz --make-bed --out plink_pruning/pruning01/CeMEE.pruned.0.1 --allow-extra-chr --double-id")
 
-# convertir en dosage 0/1/2
-genotype_pruned_matrix <- 2 * genotype_pruned_matrix
+system("/opt/homebrew/bin/plink --bfile plink_pruning/pruning01/CeMEE.pruned.0.1 --make-rel square --out plink_pruning/pruning01/CeMEE.pruned.0.1 --allow-extra-chr") 
 
-# mettre individus en lignes (IMPORTANT)
-genotype_pruned_matrix <- t(genotype_pruned_matrix)
 
-## ===============================
-## 4. IDs individus
-## ===============================
+GRM <- as.matrix(read.table("plink_pruning/pruning01/CeMEE.pruned.0.1.rel"))
 
-strainID <- tstrsplit(colnames(genotype_pruned@gt)[-1], '_')[[1]]
+fam <- read.table("plink_pruning/pruning01/CeMEE.pruned.0.1.fam")
 
-genotype_pruned_matrix <- t(genotype_pruned_matrix)
+ids <- fam$V2  # IID
 
-rownames(genotype_pruned_matrix) <- strainID
+ids <- sub("_.*", "", ids)
 
-## ===============================
-## 5. Charger phénotype
-## ===============================
+rownames(GRM) <- ids
+colnames(GRM) <- ids
+
+str(GRM)
 
 ids_pheno <- unique(phen_clean$pop_label)
 
-## ===============================
-## 6. Subset commun
-## ===============================
+common_ids <- intersect(ids, ids_pheno) # 
 
-common_ids <- intersect(strainID, ids_pheno)
-
-geno_sub <- genotype_pruned_matrix[common_ids, , drop = FALSE]
-
-## ===============================
-## 7. Reorder (CRUCIAL 🔥)
-## ===============================
-
-ids_order <- unique(phen_clean$pop_label)
-ids_order <- ids_order[ids_order %in% common_ids]
-
-geno_sub <- geno_sub[ids_order, ]
-
-## ===============================
-## 8. Kinship (VanRaden)
-## ===============================
-
-GRM <- Gmatrix(geno_sub, method = "VanRaden")
-
-## ===============================
-## 9. Vérification
-## ===============================
-
-stopifnot(all(rownames(GRM) == ids_order))
-
-## ===============================
-## 10. Export
-## ===============================
-
-write.table(GRM,
-            file = "data/kinship_grid.txt",
-            sep = '\t',
-            quote = FALSE,
-            row.names = FALSE,
-            col.names = FALSE)
-
-
-
-
-
-
-
-# Supprimer CHROM et POS
-geno_snp <- geno[, !c("CHROM", "POS"), with = FALSE]
-
-
-gwas.NGM <- GridLMM_GWAS(
-  formula = area.F ~ 1 + logD + rel_humidity + temperature + (1|pop_label) + (1|session_id),
-  reduced_formula = area.F ~ 1 + logD + rel_humidity + temperature + (1|pop_label) + (1|session_id),
-  test_formula = ~1,
-  data = phen_clean,
-  X = geno_snp,
-  X_ID = 'pop_label',
-  relmat = list(pop_label = GRM_sub),
-  method = 'REML',
-  verbose = TRUE 
-)
-
-
-
-
-
-# IDs communs
-common_ids <- intersect(ids_pheno, ids_kinship)
-
-# Filtrer le phénotype
 phen_clean_sub <- phen_clean[phen_clean$pop_label %in% common_ids, ]
-
-# Réordonner GRM_sub pour que l'ordre corresponde à phen_clean_sub
 GRM_sub <- GRM[common_ids, common_ids]
 
-# Si ton X (geno_snp) doit être aligné sur pop_label :
-geno_snp_sub <- geno_snp[, common_ids ]  # ou cols selon l'orientation de ton tableau
 
-# Vérification
-all(phen_clean_sub$pop_label %in% rownames(GRM_sub)) # doit être TRUE
+stopifnot(all(rownames(GRM_sub) == colnames(GRM_sub)))
+
+relmat = list(pop_label = GRM_sub)
+
+
+# modif des pop label (en commun)
+ids_pheno <- unique(phen_clean$pop_label)
+ids_geno  <- rownames(geno_snp)
+ids_kin   <- rownames(GRM_sub)
+
+common_ids <- Reduce(intersect, list(ids_pheno, ids_geno, ids_kin))
+
+phen_clean_sub <- phen_clean[phen_clean$pop_label %in% common_ids, ]
+geno_snp_sub <- geno_snp[common_ids, ]
+GRM_sub2 <- GRM_sub[common_ids, common_ids]
+
+
+
+fwrite(phen_clean_sub, "data/phenotype_grid.txt", sep = "\t")
+
+# Pour le genotype
+write.table(geno_snp_sub,
+            file = "data/geno_grid.txt",
+            sep = "\t",
+            quote = FALSE,
+            row.names = TRUE)     # met un NA dans la première case du header
+
+# Pour la kinship
+write.table(GRM_sub2,
+            file = "data/kinship_grid.txt",
+            sep = "\t",
+            quote = FALSE,
+            row.names = TRUE)
+
+
+str(phen_clean_sub)
+
+
+######## R ENS #########
+
+#Modele MEAN
+gwas.NGM <- GridLMM_GWAS(
+  formula = area.F ~ 1 + logD + rel_humidity + temperature + (1|date_str) + (1|pop_label) + (1|session_id),
+  reduced_formula = area.F ~ 1 + logD + rel_humidity + temperature,
+  test_formula = ~1,
+  data = phen_clean_sub,
+  X = geno_snp_sub,
+  X_ID = 'pop_label',
+  relmat = list(pop_label = GRM_sub2),
+  method = 'REML'
+)
+#Modele VAR
+gwas.NGM <- GridLMM_GWAS(
+  formula = area.F.var ~ 1 + logD + rel_humidity + temperature + (1|date_str) + (1|pop_label) + (1|session_id),
+  reduced_formula = area.F ~ 1 + logD + rel_humidity + temperature,
+  test_formula = ~1,
+  data = phen_clean_sub,
+  X = geno_snp_sub,
+  X_ID = 'pop_label',
+  relmat = list(pop_label = GRM_sub2),
+  method = 'REML'
+)
+#calcul du CV
+#Modele CV
+gwas.NGM <- GridLMM_GWAS(
+  formula = area.F ~ 1 + logD + rel_humidity + temperature + (1|date_str) + (1|pop_label) + (1|session_id),
+  reduced_formula = area.F ~ 1 + logD + rel_humidity + temperature,
+  test_formula = ~1,
+  data = phen_clean_sub,
+  X = geno_snp_sub,
+  X_ID = 'pop_label',
+  relmat = list(pop_label = GRM_sub2),
+  method = 'REML'
+)
