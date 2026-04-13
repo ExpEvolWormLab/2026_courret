@@ -1,0 +1,19 @@
+Summary Statistics:
+## Genotype file:	geno_permGWAS.csv
+## Phenotype file:	pheno_var_permGWAS.csv
+## Phenotype:	phenotype_value
+## Kinship file:	kinship_permGWAS.csv
+## Number of individuals:	966
+## Number of SNPs:	316152
+## Model:	lmm
+## MAF threshold:	0
+## Number of permutations:	100
+## permutation method:	x
+## v_g estimate in null model:	3.704627489394975e-12
+## v_e estimate in null model:	1.4373586058059422e-10
+## Narrow-sense heritability estimate:	0.025126256280679212
+## Bonferroni threshold (1% significance level):	3.163035501910473e-08
+## Bonferroni threshold (5% significance level):	1.581517750955237e-07
+## Permutation-based threshold (1% significance level):	2.006834383080637e-08
+## Permutation-based threshold (5% significance level):	9.503197388682205e-08
+## Total time:	1750.3142936229706 s

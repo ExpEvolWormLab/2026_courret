@@ -96,6 +96,9 @@ vcf <- read.vcfR("data/Cemee2025.imputed.SNP.filtered.final_renamed.vcf.gz")
 
 gt <- extract.gt(vcf, element = "GT")
 
+#gt <- extract.gt(vcf)
+#sum(is.na(gt))
+
 ## ===============================
 ## 3. FORMAT TABLEAU
 ## ===============================
@@ -121,7 +124,9 @@ dim(geno)
 geno <- fread("data/genotype_012.txt")
 str(geno)
 geno_snp <- geno[, -(1:2)]
+str(geno_snp)
 geno_snp <- t(geno_snp) #fichier final
+
 
 ############################################################
 ## STEP 3 — KINSHIP (VCF + PLINK + vcfR)
@@ -160,16 +165,12 @@ system("/opt/homebrew/bin/plink --bfile plink_pruning/pruning01/CeMEE.pruned.0.1
 
 
 GRM <- as.matrix(read.table("plink_pruning/pruning01/CeMEE.pruned.0.1.rel"))
-
 fam <- read.table("plink_pruning/pruning01/CeMEE.pruned.0.1.fam")
-
 ids <- fam$V2  # IID
-
 ids <- sub("_.*", "", ids)
 
 rownames(GRM) <- ids
 colnames(GRM) <- ids
-
 str(GRM)
 
 ids_pheno <- unique(phen_clean$pop_label)
@@ -220,37 +221,115 @@ str(phen_clean_sub)
 
 ######## R ENS #########
 
-#Modele MEAN
-gwas.NGM <- GridLMM_GWAS(
-  formula = area.F ~ 1 + logD + rel_humidity + temperature + (1|date_str) + (1|pop_label) + (1|session_id),
-  reduced_formula = area.F ~ 1 + logD + rel_humidity + temperature,
-  test_formula = ~1,
-  data = phen_clean_sub,
-  X = geno_snp_sub,
-  X_ID = 'pop_label',
-  relmat = list(pop_label = GRM_sub2),
-  method = 'REML'
-)
-#Modele VAR
-gwas.NGM <- GridLMM_GWAS(
-  formula = area.F.var ~ 1 + logD + rel_humidity + temperature + (1|date_str) + (1|pop_label) + (1|session_id),
-  reduced_formula = area.F ~ 1 + logD + rel_humidity + temperature,
-  test_formula = ~1,
-  data = phen_clean_sub,
-  X = geno_snp_sub,
-  X_ID = 'pop_label',
-  relmat = list(pop_label = GRM_sub2),
-  method = 'REML'
-)
-#calcul du CV
-#Modele CV
-gwas.NGM <- GridLMM_GWAS(
-  formula = area.F ~ 1 + logD + rel_humidity + temperature + (1|date_str) + (1|pop_label) + (1|session_id),
-  reduced_formula = area.F ~ 1 + logD + rel_humidity + temperature,
-  test_formula = ~1,
-  data = phen_clean_sub,
-  X = geno_snp_sub,
-  X_ID = 'pop_label',
-  relmat = list(pop_label = GRM_sub2),
-  method = 'REML'
-)
+install.packages("devtools")
+library("devtools")
+install_github("jdstorey/qvalue")
+library("qvalue")
+
+
+#MEAN
+
+gwas.mean <- readRDS("output_gridLMM/gwas_mean.rds")
+
+str(gwas.mean)
+
+hist(pvals, breaks = 50, col = "grey80",
+     main = "Distribution des p-values",
+     xlab = "p-values") #hyp validé
+
+pvals <- gwas.mean$results$p_value_REML
+
+valid <- !is.na(pvals)
+
+qobj <- qvalue(p = pvals[valid])
+
+gwas.mean$results$qvalue <- NA
+gwas.mean$results$qvalue[valid] <- qobj$qvalues
+
+gwas.mean$results$significant <- gwas.mean$results$qvalue < 0.05
+
+summary(qobj)
+plot(qobj)
+
+max(qobj$qvalues[pvals[valid] <= 0.01])
+
+
+
+
+
+
+#comparer beta 
+
+gemma_mean= fread("output_GEMMA/gwas_results.assoc.txt")
+str(gemma_mean)
+
+# Compare the beta
+plot(gwas.mean$results$beta.5,gemma_mean$beta,pch=10)
+#Compare the pvalues
+plot(-log10(gwas.mean$results$p_value_REML),-log10(gemma_mean$p_wald),pch=10)
+
+
+
+
+#VARIANCE 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#code francois 
+gwas.NGM = GridLMM_GWAS(formula = y ~ 1 +logD + rel_humidity + temperature + (1|date_str) + (1|pop_label) + (1|session_id),
+                        test_formula = ~1, reduced_formula = ~0,
+                        data = all_BLUEs_genotyped_NGM, X = genotype_matrix[,is.NA==0],
+                        X_ID = 'pop_label', relmat = list(pop_label = GRM_sub), mc.cores = 2 ,method = 'REML')
+
+test.glm <- lmer(y~1+logD + rel_humidity + temperature + (1|date_str)  + (1|session_id),data=all_BLUEs_genotyped_NGM)
+all_BLUEs_genotyped_NGM$y_corrected_residuals <- resid(test.glm)
+
+gwas.NGM.2 = GridLMM_GWAS(formula = y_corrected_residuals ~ 1 + (1|pop_label),
+                          test_formula = ~1, reduced_formula = ~0,
+                          data = all_BLUEs_genotyped_NGM, X = genotype_matrix[,is.NA==0],
+                          X_ID = 'pop_label', relmat = list(pop_label = GRM_sub), mc.cores = 2 ,method = 'REML')
+
+gwas.NGM.3 = GridLMM_GWAS(formula = y_corrected_residuals ~ 1 + (1|pop_label),
+                          test_formula = ~1, reduced_formula = ~1,
+                          data = all_BLUEs_genotyped_NGM, X = genotype_matrix[,is.NA==0],
+                          X_ID = 'pop_label', relmat = list(pop_label = GRM_sub), mc.cores = 2 ,method = 'REML')
+
+gwas.NGM.4 = GridLMM_GWAS(formula = y ~ 1 +logD + rel_humidity + temperature + (1|date_str) + (1|pop_label) + (1|session_id),
+                          test_formula = ~ 1 + logD + rel_humidity + temperature,
+                          reduced_formula = ~0,
+                          data = all_BLUEs_genotyped_NGM, X = genotype_matrix[,is.NA==0],
+                          X_ID = 'pop_label', relmat = list(pop_label = GRM_sub), mc.cores = 2 ,method = 'REML')
+
+gemma_T7=(read.table("gemma_R02/gwas_results_BLUE_R02_T7.assoc.txt",h=TRUE))
+
+# Compare the beta
+plot(gwas.NGM$results$beta.5,gemma_T7$beta,pch=16)
+#Compare the pvalues
+plot(-log10(gwas.NGM$results$p_value_REML),-log10(gemma_T7$p_wald),pch=16)

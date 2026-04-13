@@ -26,3 +26,14 @@ output/perm_log_var_pwald_matrix.txt
 data/genotype_012.txt
 data/genotype_raw_GT.txt
 output/perm_log_CV_pwald_matrix.txt
+data/geno_permGWAS.csv
+data/geno_permGWAS.csv
+data/geno_permGWAS.csv
+data/geno_permGWAS.csv
+output_GEMMA/perm_log_CV_pwald_matrix.txt
+output_GEMMA/perm_log_var_pwald_matrix.txt
+output_GEMMA/perm_pwald_matrix.txt
+data/geno_permGWAS.csv
+data/geno_grid.txt
+data/geno_grid.txt
+data/geno_permGWAS.csv
