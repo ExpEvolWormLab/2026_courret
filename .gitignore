@@ -37,3 +37,7 @@ data/geno_permGWAS.csv
 data/geno_grid.txt
 data/geno_grid.txt
 data/geno_permGWAS.csv
+data/phenotype_grid.txt
+data/genotype_from_FM.txt
+data/phenotype_grid.txt
+data/phenotype_grid.txt
