@@ -160,7 +160,6 @@ genotype_pruned <- read.vcfR("plink_pruning/pruning01/CeMEE.pruned.0.1.vcf.gz")
 ## ===============================
 
 system("/opt/homebrew/bin/plink --vcf plink_pruning/pruning01/CeMEE.pruned.0.1.vcf.gz --make-bed --out plink_pruning/pruning01/CeMEE.pruned.0.1 --allow-extra-chr --double-id")
-
 system("/opt/homebrew/bin/plink --bfile plink_pruning/pruning01/CeMEE.pruned.0.1 --make-rel square --out plink_pruning/pruning01/CeMEE.pruned.0.1 --allow-extra-chr") 
 
 
@@ -284,8 +283,26 @@ plot(-log10(gwas.mean$results$p_value_REML),-log10(gemma_mean$p_wald),pch=10)
 
 
 
+# creer matrice de genotype pruné 
 
+# créer dossier
+system("mkdir -p plink_pruning/pruning_grid")
+#pruning de 0.1
+system("/opt/homebrew/bin/plink --vcf data/Cemee2025.imputed.SNP.filtered.final_renamed.vcf.gz --indep-pairwise 200 10 0.1 --out plink_pruning/pruning_grid/CeMEE.pruned.0.1 --allow-extra-chr --double-id")
+# extraire matrice de genotype pruné
+system("/opt/homebrew/bin/plink --vcf data/Cemee2025.imputed.SNP.filtered.final_renamed.vcf.gz --extract plink_pruning/pruning_grid/CeMEE.pruned.0.1.prune.in --recode A --out plink_pruning/pruning_grid/genotype_pruned --allow-extra-chr --double-id")
 
+geno_pruned <- fread("plink_pruning/pruning_grid/genotype_pruned.raw")
+# enlever colonnes meta PLINK
+geno_pruned <- geno_pruned[, -(1:6)]
+genotype_pruned_matrix <- as.matrix(geno_pruned)
+
+str(genotype_pruned_matrix)
+
+colnames(genotype_pruned_matrix) <- sapply(
+  strsplit(colnames(genotype_pruned_matrix), "_"),
+  function(x) paste(x[1], x[2], sep = "_")
+)
 
 
 

@@ -41,3 +41,8 @@ data/phenotype_grid.txt
 data/genotype_from_FM.txt
 data/phenotype_grid.txt
 data/phenotype_grid.txt
+data/geno_grid.txt
+data/geno_grid.txt
+others/output_GEMMA/perm_pwald_matrix.txt
+others/output_GEMMA/perm_log_var_pwald_matrix.txt
+others/output_GEMMA/perm_log_CV_pwald_matrix.txt

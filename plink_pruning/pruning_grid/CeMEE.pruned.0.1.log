@@ -1,0 +1,39 @@
+PLINK v1.90p 64-bit (6 Sep 2023)
+Options in effect:
+  --allow-extra-chr
+  --double-id
+  --indep-pairwise 200 10 0.1
+  --out plink_pruning/pruning_grid/CeMEE.pruned.0.1
+  --vcf data/Cemee2025.imputed.SNP.filtered.final_renamed.vcf.gz
+
+Hostname: gevwf13.recherche.wifi.biologie.ens.fr
+Working directory: /Users/edouardcourret/Documents/GitHub/2026_courret
+Start time: Thu Apr 16 10:04:32 2026
+
+Random number seed: 1776326672
+8192 MB RAM detected; reserving 4096 MB for main workspace.
+--vcf: plink_pruning/pruning_grid/CeMEE.pruned.0.1-temporary.bed +
+plink_pruning/pruning_grid/CeMEE.pruned.0.1-temporary.bim +
+plink_pruning/pruning_grid/CeMEE.pruned.0.1-temporary.fam written.
+317611 variants loaded from .bim file.
+1001 people (0 males, 0 females, 1001 ambiguous) loaded from .fam.
+Ambiguous sex IDs written to plink_pruning/pruning_grid/CeMEE.pruned.0.1.nosex
+.
+Using 1 thread (no multithreaded calculations invoked).
+Before main variant filters, 1001 founders and 0 nonfounders present.
+Calculating allele frequencies... done.
+Total genotyping rate is 0.999958.
+317611 variants and 1001 people pass filters and QC.
+Note: No phenotypes present.
+Pruned 55868 variants from chromosome 27, leaving 354.
+Pruned 70336 variants from chromosome 28, leaving 474.
+Pruned 26142 variants from chromosome 29, leaving 231.
+Pruned 45606 variants from chromosome 30, leaving 304.
+Pruned 177 variants from chromosome 31, leaving 2.
+Pruned 90957 variants from chromosome 32, leaving 580.
+Pruned 26413 variants from chromosome 23, leaving 167.
+Pruning complete.  315499 of 317611 variants removed.
+Marker lists written to plink_pruning/pruning_grid/CeMEE.pruned.0.1.prune.in
+and plink_pruning/pruning_grid/CeMEE.pruned.0.1.prune.out .
+
+End time: Thu Apr 16 10:04:36 2026
