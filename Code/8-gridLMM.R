@@ -65,7 +65,8 @@ phen_clean <- phen_data[, .(
   rel_humidity,
   temperature,
   date_str,
-  session_id
+  session_id, 
+  env_label
 )]
 
 ## ===============================
@@ -74,58 +75,32 @@ phen_clean <- phen_data[, .(
 
 fwrite(phen_clean, "data/phenotype_grid.txt", sep = "\t")
 
-str(phen_clean)
-
 
 
 ############################################################
 ## STEP 2 — EXTRACTION GENOTYPE DEPUIS VCF (BRUT)
 ############################################################
 
-library(vcfR)
-
-## ===============================
-## 1. LOAD VCF
-## ===============================
-
-vcf <- read.vcfR("data/Cemee2025.imputed.SNP.filtered.final_renamed.vcf.gz")
-
-## ===============================
-## 2. EXTRAIRE GT (FORMAT BRUT)
-## ===============================
-
-gt <- extract.gt(vcf, element = "GT")
-
-#gt <- extract.gt(vcf)
-#sum(is.na(gt))
-
-## ===============================
-## 3. FORMAT TABLEAU
-## ===============================
-
-geno_dt <- as.data.table(gt)
-
-# ajouter info SNP
-geno_dt[, CHROM := getCHROM(vcf)]
-geno_dt[, POS := getPOS(vcf)]
-
-# mettre CHROM/POS au début
-setcolorder(geno_dt, c("CHROM", "POS", setdiff(colnames(geno_dt), c("CHROM","POS"))))
-
-## ===============================
-## 4. SAVE GENOTYPE
-## ===============================
-
-fwrite(geno_dt, "output/genotype_raw_GT.txt", sep = "\t")
-
-dim(geno)
-
 #Sur ordi ENS, transfo en 0,1 ou 2
 geno <- fread("data/genotype_012.txt")
-str(geno)
-geno_snp <- geno[, -(1:2)]
-str(geno_snp)
-geno_snp <- t(geno_snp) #fichier final
+
+# créer ID SNP
+geno[, SNP_ID := paste(CHROM, POS, sep = "_")]
+
+# garder uniquement SNP numériques
+geno_num <- geno[, !c("CHROM", "POS", "SNP_ID"), with = FALSE]
+
+# convertir en matrice
+geno_mat <- as.matrix(geno_num)
+
+# transpose (IMPORTANT : sur la matrice, pas sur geno)
+geno_mat <- t(geno_mat)
+
+# ajouter noms SNP (colonnes)
+colnames(geno_mat) <- geno$SNP_ID
+
+# ajouter noms individus (lignes)
+rownames(geno_mat) <- colnames(geno_num)
 
 
 ############################################################
@@ -141,146 +116,62 @@ library(AGHmatrix)
 ## ===============================
 
 # créer dossier
-system("mkdir -p plink_pruning/pruning01")
+system("mkdir -p plink_pruning/pruning_grid")
 #pruning de 0.1
-system("/opt/homebrew/bin/plink --vcf data/Cemee2025.imputed.SNP.filtered.final_renamed.vcf.gz --indep-pairwise 200 10 0.1 --out plink_pruning/pruning01/CeMEE.pruned.0.1 --allow-extra-chr --double-id")
-# Extraire SNPs prunés
-system("/opt/homebrew/bin/plink --vcf data/Cemee2025.imputed.SNP.filtered.final_renamed.vcf.gz --extract plink_pruning/pruning01/CeMEE.pruned.0.1.prune.in --recode vcf --out plink_pruning/pruning01/CeMEE.pruned.0.1 --allow-extra-chr --double-id")
-# compression
-system("bgzip plink_pruning/pruning01/CeMEE.pruned.0.1.vcf")
+system("/opt/homebrew/bin/plink --vcf data/Cemee2025.imputed.SNP.filtered.final_renamed.vcf.gz --indep-pairwise 200 10 0.1 --out plink_pruning/pruning_grid/CeMEE.pruned.0.1 --allow-extra-chr --double-id")
+# extraire matrice de genotype pruné
+system("/opt/homebrew/bin/plink --vcf data/Cemee2025.imputed.SNP.filtered.final_renamed.vcf.gz --extract plink_pruning/pruning_grid/CeMEE.pruned.0.1.prune.in --recode A --out plink_pruning/pruning_grid/genotype_pruned --allow-extra-chr --double-id")
+
+geno_pruned <- fread("plink_pruning/pruning_grid/genotype_pruned.raw")
+str(geno_pruned)
+# enlever colonnes meta PLINK
+geno_pruned <- geno_pruned[, -(1:6)]
+genotype_pruned_matrix <- as.matrix(geno_pruned)
+
+str(genotype_pruned_matrix)
+
+colnames(genotype_pruned_matrix) <- sapply(
+  strsplit(colnames(genotype_pruned_matrix), "_"),
+  function(x) paste(x[1], x[2], sep = "_")
+)
 
 ## ===============================
-## 2. Lire VCF pruné
+## 3. Bonne taille de fichier 
 ## ===============================
-
-genotype_pruned <- read.vcfR("plink_pruning/pruning01/CeMEE.pruned.0.1.vcf.gz")
-
-## ===============================
-## 3. 
-## ===============================
-
-system("/opt/homebrew/bin/plink --vcf plink_pruning/pruning01/CeMEE.pruned.0.1.vcf.gz --make-bed --out plink_pruning/pruning01/CeMEE.pruned.0.1 --allow-extra-chr --double-id")
-system("/opt/homebrew/bin/plink --bfile plink_pruning/pruning01/CeMEE.pruned.0.1 --make-rel square --out plink_pruning/pruning01/CeMEE.pruned.0.1 --allow-extra-chr") 
-
-
-GRM <- as.matrix(read.table("plink_pruning/pruning01/CeMEE.pruned.0.1.rel"))
-fam <- read.table("plink_pruning/pruning01/CeMEE.pruned.0.1.fam")
-ids <- fam$V2  # IID
-ids <- sub("_.*", "", ids)
-
-rownames(GRM) <- ids
-colnames(GRM) <- ids
-str(GRM)
-
-ids_pheno <- unique(phen_clean$pop_label)
-
-common_ids <- intersect(ids, ids_pheno) # 
-
-phen_clean_sub <- phen_clean[phen_clean$pop_label %in% common_ids, ]
-GRM_sub <- GRM[common_ids, common_ids]
-
-
-stopifnot(all(rownames(GRM_sub) == colnames(GRM_sub)))
-
-relmat = list(pop_label = GRM_sub)
-
 
 # modif des pop label (en commun)
 ids_pheno <- unique(phen_clean$pop_label)
-ids_geno  <- rownames(geno_snp)
-ids_kin   <- rownames(GRM_sub)
+ids_geno  <- rownames(geno_mat)
+ids_pruned <- unique(geno_pruned$FID)
 
-common_ids <- Reduce(intersect, list(ids_pheno, ids_geno, ids_kin))
+common_ids <- Reduce(intersect, list(ids_pheno, ids_geno))
 
 phen_clean_sub <- phen_clean[phen_clean$pop_label %in% common_ids, ]
-geno_snp_sub <- geno_snp[common_ids, ]
-GRM_sub2 <- GRM_sub[common_ids, common_ids]
+geno_snp_sub <- geno_mat[common_ids, ]
+pruned_sub <- geno_pruned[geno_pruned$FID %in% common_ids, ]
 
-
+str(geno_snp_sub)
 
 fwrite(phen_clean_sub, "data/phenotype_grid.txt", sep = "\t")
 
 # Pour le genotype
-write.table(geno_snp_sub,
-            file = "data/geno_grid.txt",
+write.table(geno_mat,
+            "data/geno_grid.txt",
             sep = "\t",
             quote = FALSE,
-            row.names = TRUE)     # met un NA dans la première case du header
+            row.names = TRUE,
+            col.names = NA)
+
+str(geno_snp_sub)
+str(phen_clean_sub)
+str(pruned_sub)
 
 # Pour la kinship
-write.table(GRM_sub2,
-            file = "data/kinship_grid.txt",
+write.table(pruned_sub,
+            file = "data/pruned_grid.txt",
             sep = "\t",
             quote = FALSE,
-            row.names = TRUE)
-
-
-str(phen_clean_sub)
-
-
-######## R ENS #########
-
-install.packages("devtools")
-library("devtools")
-install_github("jdstorey/qvalue")
-library("qvalue")
-
-
-#MEAN
-
-gwas.mean <- readRDS("output_gridLMM/gwas_mean.rds")
-
-str(gwas.mean)
-
-hist(pvals, breaks = 50, col = "grey80",
-     main = "Distribution des p-values",
-     xlab = "p-values") #hyp validé
-
-pvals <- gwas.mean$results$p_value_REML
-
-valid <- !is.na(pvals)
-
-qobj <- qvalue(p = pvals[valid])
-
-gwas.mean$results$qvalue <- NA
-gwas.mean$results$qvalue[valid] <- qobj$qvalues
-
-gwas.mean$results$significant <- gwas.mean$results$qvalue < 0.05
-
-summary(qobj)
-plot(qobj)
-
-max(qobj$qvalues[pvals[valid] <= 0.01])
-
-
-
-
-
-
-#comparer beta 
-
-gemma_mean= fread("output_GEMMA/gwas_results.assoc.txt")
-str(gemma_mean)
-
-# Compare the beta
-plot(gwas.mean$results$beta.5,gemma_mean$beta,pch=10)
-#Compare the pvalues
-plot(-log10(gwas.mean$results$p_value_REML),-log10(gemma_mean$p_wald),pch=10)
-
-
-
-
-#VARIANCE 
-
-
-
-
-
-
-
-
-
-
+            row.names = FALSE)
 
 
 # creer matrice de genotype pruné 
@@ -319,34 +210,80 @@ colnames(genotype_pruned_matrix) <- sapply(
 
 
 
-#code francois 
-gwas.NGM = GridLMM_GWAS(formula = y ~ 1 +logD + rel_humidity + temperature + (1|date_str) + (1|pop_label) + (1|session_id),
-                        test_formula = ~1, reduced_formula = ~0,
-                        data = all_BLUEs_genotyped_NGM, X = genotype_matrix[,is.NA==0],
-                        X_ID = 'pop_label', relmat = list(pop_label = GRM_sub), mc.cores = 2 ,method = 'REML')
 
-test.glm <- lmer(y~1+logD + rel_humidity + temperature + (1|date_str)  + (1|session_id),data=all_BLUEs_genotyped_NGM)
-all_BLUEs_genotyped_NGM$y_corrected_residuals <- resid(test.glm)
 
-gwas.NGM.2 = GridLMM_GWAS(formula = y_corrected_residuals ~ 1 + (1|pop_label),
-                          test_formula = ~1, reduced_formula = ~0,
-                          data = all_BLUEs_genotyped_NGM, X = genotype_matrix[,is.NA==0],
-                          X_ID = 'pop_label', relmat = list(pop_label = GRM_sub), mc.cores = 2 ,method = 'REML')
 
-gwas.NGM.3 = GridLMM_GWAS(formula = y_corrected_residuals ~ 1 + (1|pop_label),
-                          test_formula = ~1, reduced_formula = ~1,
-                          data = all_BLUEs_genotyped_NGM, X = genotype_matrix[,is.NA==0],
-                          X_ID = 'pop_label', relmat = list(pop_label = GRM_sub), mc.cores = 2 ,method = 'REML')
 
-gwas.NGM.4 = GridLMM_GWAS(formula = y ~ 1 +logD + rel_humidity + temperature + (1|date_str) + (1|pop_label) + (1|session_id),
-                          test_formula = ~ 1 + logD + rel_humidity + temperature,
-                          reduced_formula = ~0,
-                          data = all_BLUEs_genotyped_NGM, X = genotype_matrix[,is.NA==0],
-                          X_ID = 'pop_label', relmat = list(pop_label = GRM_sub), mc.cores = 2 ,method = 'REML')
 
-gemma_T7=(read.table("gemma_R02/gwas_results_BLUE_R02_T7.assoc.txt",h=TRUE))
 
-# Compare the beta
-plot(gwas.NGM$results$beta.5,gemma_T7$beta,pch=16)
-#Compare the pvalues
-plot(-log10(gwas.NGM$results$p_value_REML),-log10(gemma_T7$p_wald),pch=16)
+## ===============================
+## 0. Extraire IDs communs
+## ===============================
+
+ids_pheno  <- unique(phen_clean_sub$pop_label)
+ids_geno   <- rownames(geno_snp_sub)
+ids_kin    <- pruned_sub$FID
+
+common_ids <- Reduce(intersect, list(ids_pheno, ids_geno, ids_kin))
+
+cat("Common IDs:", length(common_ids), "\n")
+
+
+## ===============================
+## 1. Reordonner PHENOTYPE
+## ===============================
+
+phen_clean_sub <- phen_clean_sub[
+  match(common_ids, phen_clean_sub$pop_label)
+]
+
+phen_clean_sub <- phen_clean_sub[
+  phen_clean_sub$pop_label %in% common_ids
+]
+
+
+## ===============================
+## 2. Reordonner GENOTYPE
+## ===============================
+
+geno_snp_sub <- geno_snp_sub[common_ids, , drop = FALSE]
+
+
+## ===============================
+## 3. Reordonner KINSHIP
+## ===============================
+
+pruned_sub <- pruned_sub[
+  match(common_ids, pruned_sub$FID)
+]
+
+
+## ===============================
+## 4. CHECK FINAL (OBLIGATOIRE)
+## ===============================
+
+stopifnot(all(phen_clean_sub$pop_label == rownames(geno_snp_sub)))
+stopifnot(all(pruned_sub$FID == rownames(geno_snp_sub)))
+stopifnot(nrow(phen_clean_sub) == nrow(geno_snp_sub))
+
+
+## ===============================
+## 5. EXPORT PROPRE
+## ===============================
+
+fwrite(phen_clean_sub,
+       "data/phenotype_grid.txt",
+       sep = "\t")
+
+write.table(geno_snp_sub,
+            file = "data/geno_grid.txt",
+            sep = "\t",
+            quote = FALSE,
+            row.names = TRUE)
+
+write.table(pruned_sub,
+            file = "data/pruned_grid.txt",
+            sep = "\t",
+            quote = FALSE,
+            row.names = FALSE)
+

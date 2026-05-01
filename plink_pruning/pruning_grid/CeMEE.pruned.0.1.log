@@ -8,9 +8,9 @@ Options in effect:
 
 Hostname: gevwf13.recherche.wifi.biologie.ens.fr
 Working directory: /Users/edouardcourret/Documents/GitHub/2026_courret
-Start time: Thu Apr 16 10:04:32 2026
+Start time: Thu Apr 30 11:37:02 2026
 
-Random number seed: 1776326672
+Random number seed: 1777541822
 8192 MB RAM detected; reserving 4096 MB for main workspace.
 --vcf: plink_pruning/pruning_grid/CeMEE.pruned.0.1-temporary.bed +
 plink_pruning/pruning_grid/CeMEE.pruned.0.1-temporary.bim +
@@ -36,4 +36,4 @@ Pruning complete.  315499 of 317611 variants removed.
 Marker lists written to plink_pruning/pruning_grid/CeMEE.pruned.0.1.prune.in
 and plink_pruning/pruning_grid/CeMEE.pruned.0.1.prune.out .
 
-End time: Thu Apr 16 10:04:36 2026
+End time: Thu Apr 30 11:37:07 2026

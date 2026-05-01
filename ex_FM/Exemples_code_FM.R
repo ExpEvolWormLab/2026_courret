@@ -58,5 +58,5 @@ for(traitID in c("beta","SF",'SB','FS','FB','BS','BF',"area.F")){
 }
 
 ## La commande pour faire tourner un script depuis le terminal
-# nohup Rscript ./monScriptR.R > output_monScriptR.txt &
+# nohup Rscript ./10-Run_gridLMM.R > output_grid.txt &
 

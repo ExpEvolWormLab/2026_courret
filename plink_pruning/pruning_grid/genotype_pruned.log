@@ -9,9 +9,9 @@ Options in effect:
 
 Hostname: gevwf13.recherche.wifi.biologie.ens.fr
 Working directory: /Users/edouardcourret/Documents/GitHub/2026_courret
-Start time: Thu Apr 16 10:04:49 2026
+Start time: Thu Apr 30 11:37:19 2026
 
-Random number seed: 1776326689
+Random number seed: 1777541839
 8192 MB RAM detected; reserving 4096 MB for main workspace.
 --vcf: plink_pruning/pruning_grid/genotype_pruned-temporary.bed +
 plink_pruning/pruning_grid/genotype_pruned-temporary.bim +
@@ -28,4 +28,4 @@ Total genotyping rate is 0.999.
 Note: No phenotypes present.
 --recode A to plink_pruning/pruning_grid/genotype_pruned.raw ... done.
 
-End time: Thu Apr 16 10:04:54 2026
+End time: Thu Apr 30 11:37:23 2026
