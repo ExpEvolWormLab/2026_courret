@@ -352,3 +352,12 @@ ggplot(GWAS.cv, aes(x = BP_cum, y = log10p_adj, color = CHR)) +
   )
 
 
+
+
+
+gen= fread ("data/genotype_raw_GT.txt")
+
+str(gen)
+library(vcfR)
+vcf <- read.vcfR("data/Cemee2025.imputed.SNP.filtered.final_renamed.vcf.gz")
+str(vcf)

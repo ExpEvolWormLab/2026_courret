@@ -66,19 +66,68 @@ phen_clean <- phen_data[, .(
   env_label
 )]
 
+plot(phen_clean$area.F, phen_clean$area.F.var)
+
+ggplot(phen_clean, aes(x = area.F, y = area.F.var)) +
+  
+  geom_point(
+    alpha = 0.6,
+    size = 2,
+    color = "steelblue"
+  ) +
+  
+  scale_y_log10() +
+  
+  theme_classic() +
+  
+  labs(
+    x = "Mean",
+    y = "log(variance)"
+  )
+cor.test(phen_clean$area.F, phen_clean$area.F.var)
+
 ############################################################
 ## STEP 2 — EXTRACT GENOTYPE
 ############################################################
 
-#Sur ordi ENS, transfo en 0,1 ou 2
-geno <- fread("data/genotype_012.txt")
+# 1. lecture VCF
+vcf <- read.vcfR(
+  "data/Cemee2025.imputed.SNP.filtered.final_renamed.vcf.gz"
+)
 
-geno[, SNP_ID := paste(CHROM, POS, sep = "_")] # créer ID SNP
-geno_num <- geno[, !c("CHROM", "POS", "SNP_ID"), with = FALSE] # garder uniquement SNP numériques
-geno_mat <- as.matrix(geno_num) # convertir en matrice
-geno_mat <- t(geno_mat) # transpose
-colnames(geno_mat) <- geno$SNP_ID # ajouter noms SNP
-rownames(geno_mat) <- colnames(geno_num) # ajouter noms individus
+# 2. extraire génotypes
+gt <- extract.gt(vcf, element = "GT", as.numeric = FALSE)
+
+# 3. fonction de conversion robuste
+gt_to_012 <- function(x) {
+  ifelse(x %in% c("0/0", "0|0"), 0,
+         ifelse(x %in% c("0/1", "1/0", "0|1", "1|0"), 1,
+                ifelse(x %in% c("1/1", "1|1"), 2, NA)))
+}
+
+# 4. appliquer conversion
+geno_012 <- apply(gt, 2, gt_to_012)
+
+# 5. reconstruire data.frame
+geno_012 <- data.frame(
+  CHROM = vcf@fix[, "CHROM"],
+  POS   = as.numeric(vcf@fix[, "POS"]),
+  geno_012,
+  check.names = FALSE
+)
+
+str(geno_012)
+
+saveRDS(geno_012, file = "data/geno_012_clean.rds")
+geno <- readRDS("data/geno_012_clean.rds")
+
+#6. mise en forme 
+geno$SNP_ID <- paste(geno$CHROM, geno$POS, sep = "_")
+geno_num <- geno[, !(names(geno) %in% c("CHROM", "POS", "SNP_ID"))]
+geno_mat <- as.matrix(geno_num)
+geno_mat <- t(geno_mat)
+colnames(geno_mat) <- geno$SNP_ID
+rownames(geno_mat) <- colnames(geno_num)
 
 
 ############################################################
@@ -112,7 +161,7 @@ ids_pheno <- unique(phen_clean$pop_label)
 ids_geno  <- rownames(geno_mat)
 ids_pruned <- unique(geno_pruned$FID)
 
-common_ids <- Reduce(intersect, list(ids_pheno, ids_geno, ids_pruned))
+common_ids <- Reduce(intersect, list(ids_pheno, ids_geno))
 
 phen_clean_sub <- phen_clean[phen_clean$pop_label %in% common_ids, ]
 geno_snp_sub <- geno_mat[common_ids, ]
@@ -122,12 +171,13 @@ pruned_sub <- geno_pruned[geno_pruned$FID %in% common_ids, ]
 fwrite(phen_clean_sub, "data/phenotype_grid.txt", sep = "\t")
 
 # Pour le genotype
-write.table(geno_mat,
+write.table(geno_snp_sub,
             "data/geno_grid.txt",
             sep = "\t",
             quote = FALSE,
             row.names = TRUE,
             col.names = NA)
+
 
 # Pour la kinship
 write.table(pruned_sub,
