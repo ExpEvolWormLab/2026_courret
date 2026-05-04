@@ -9,7 +9,7 @@ library(lme4)
 library(AGHmatrix)
 library(qqman)
 
-all_BLUEs_genotyped=fread("phenotype_grid.txt")
+all_BLUEs_genotyped=fread("data/phenotype_grid.txt")
 all_BLUEs_genotyped_NGM <- all_BLUEs_genotyped[env_label == "NGM"]
 
 genotype <- read.table(
