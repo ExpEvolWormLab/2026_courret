@@ -71,14 +71,14 @@ phen_clean <- phen_data[, .(
 ############################################################
 
 #Sur ordi ENS, transfo en 0,1 ou 2
-geno <- fread("data/genotype_012.txt")
+#geno <- fread("genotype_012.txt")
 
-geno[, SNP_ID := paste(CHROM, POS, sep = "_")] # créer ID SNP
-geno_num <- geno[, !c("CHROM", "POS", "SNP_ID"), with = FALSE] # garder uniquement SNP numériques
-geno_mat <- as.matrix(geno_num) # convertir en matrice
-geno_mat <- t(geno_mat) # transpose
-colnames(geno_mat) <- geno$SNP_ID # ajouter noms SNP
-rownames(geno_mat) <- colnames(geno_num) # ajouter noms individus
+#geno[, SNP_ID := paste(CHROM, POS, sep = "_")] # créer ID SNP
+#geno_num <- geno[, !c("CHROM", "POS", "SNP_ID"), with = FALSE] # garder uniquement SNP numériques
+#geno_mat <- as.matrix(geno_num) # convertir en matrice
+#geno_mat <- t(geno_mat) # transpose
+#colnames(geno_mat) <- geno$SNP_ID # ajouter noms SNP
+#rownames(geno_mat) <- colnames(geno_num) # ajouter noms individus
 
 
 ############################################################
@@ -94,18 +94,23 @@ library(AGHmatrix)
 ## ===============================
 
 # créer dossier
-system("mkdir -p plink_pruning/pruning_grid")
+#system("mkdir -p plink_pruning/pruning_grid")
 #pruning de 0.1
-system("/opt/homebrew/bin/plink --vcf data/Cemee2025.imputed.SNP.filtered.final_renamed.vcf.gz --indep-pairwise 200 10 0.1 --out plink_pruning/pruning_grid/CeMEE.pruned.0.1 --allow-extra-chr --double-id")
+#system("/opt/homebrew/bin/plink --vcf data/Cemee2025.imputed.SNP.filtered.final_renamed.vcf.gz --indep-pairwise 200 10 0.1 --out plink_pruning/pruning_grid/CeMEE.pruned.0.1 --allow-extra-chr --double-id")
 # extraire matrice de genotype pruné
-system("/opt/homebrew/bin/plink --vcf data/Cemee2025.imputed.SNP.filtered.final_renamed.vcf.gz --extract plink_pruning/pruning_grid/CeMEE.pruned.0.1.prune.in --recode A --out plink_pruning/pruning_grid/genotype_pruned --allow-extra-chr --double-id")
+#system("/opt/homebrew/bin/plink --vcf data/Cemee2025.imputed.SNP.filtered.final_renamed.vcf.gz --extract plink_pruning/pruning_grid/CeMEE.pruned.0.1.prune.in --recode A --out plink_pruning/pruning_grid/genotype_pruned --allow-extra-chr --double-id")
 
-geno_pruned <- fread("plink_pruning/pruning_grid/genotype_pruned.raw")
-str(geno_pruned)
+#geno_pruned <- fread("plink_pruning/pruning_grid/genotype_pruned.raw")
+#str(geno_pruned)
 
 ############################################################
 ## STEP 4 — Bonne taille de fichier
 ############################################################
+
+
+## Load Edouard's table instead
+geno_mat=read.table("data_FM/geno_grid.txt",header = TRUE,sep = "\t",row.names = 1)
+geno_pruned <- fread("data_FM/pruned_grid.txt")
 
 # modif des pop label (en commun)
 ids_pheno <- unique(phen_clean$pop_label)
@@ -119,7 +124,7 @@ geno_snp_sub <- geno_mat[common_ids, ]
 pruned_sub <- geno_pruned[geno_pruned$FID %in% common_ids, ]
 
 # Pour le phenotype
-fwrite(phen_clean_sub, "data/phenotype_grid.txt", sep = "\t")
+fwrite(phen_clean_sub, "data_FM/phenotype_grid_all.txt", sep = "\t")
 
 # Pour le genotype
 write.table(geno_mat,

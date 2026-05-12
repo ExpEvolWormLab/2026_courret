@@ -9,11 +9,11 @@ library(lme4)
 library(AGHmatrix)
 library(qqman)
 
-#all_BLUEs_genotyped=fread("data/phenotype_grid.txt")
-#all_BLUEs_genotyped_NGM <- all_BLUEs_genotyped[env_label == "NGM"]
-
-all_BLUEs_genotyped_NGM=read.table("data_FM/data_for_EC.txt",h=TRUE)
-head(all_BLUEs_genotyped_NGM)
+all_BLUEs_genotyped=fread("data_FM/phenotype_grid_all.txt")
+all_BLUEs_genotyped_NGM <- all_BLUEs_genotyped[env_label == "NGM"]
+dim(all_BLUEs_genotyped_NGM)
+#all_BLUEs_genotyped_NGM=read.table("data_FM/data_for_EC.txt",h=TRUE)
+#head(all_BLUEs_genotyped_NGM)
 
 genotype <- read.table("data_FM/geno_grid.txt",header = TRUE,sep = "\t",row.names = 1)
 
@@ -87,7 +87,7 @@ for(traitID in c("area.F","area.F.var","CV_areaF")){
       X = genotype_matrix_CHR[,is.NA==0],
       X_ID = 'pop_label',
       relmat = list(pop_label = GRM_CHR),
-      mc.cores = 10,
+      mc.cores = 2,
       method = 'REML'
     )
     
