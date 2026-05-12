@@ -184,7 +184,7 @@ pheno_mean <- pheno_mean %>%
     population2 = str_extract(pop_label, ".*(?=L)")
   )
 
-write.table(pheno_mean, file = "pheno_mean.txt", row.names = FALSE, col.names = T, quote = FALSE)
+write.table(pheno_mean, file = "pheno_mean_NaCl.txt", row.names = FALSE, col.names = T, quote = FALSE)
 
 ## ===============================
 ## 2.1  Distribution of mean

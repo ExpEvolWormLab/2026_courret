@@ -52,3 +52,6 @@ data/geno_grid.txt
 data/geno_grid.txt
 data/geno_grid.txt
 data/geno_grid.txt
+*.png
+/data
+data/geno_grid.txt

@@ -27,7 +27,7 @@ library(forcats)
 #Data filtering
 phen_data_NGM <- phen_data %>%
   filter(
-    env_label == "NGM",
+    env_label == "NaCl",
   ) %>%
   mutate(
     session_id = factor(session_id),
@@ -309,7 +309,7 @@ pheno_var <- pheno_var %>%
     population2 = str_extract(pop_label, ".*(?=L)")
   )
 
-write.table(pheno_var, file = "pheno_var.txt", row.names = FALSE, col.names = T, quote = FALSE)
+write.table(pheno_var, file = "pheno_var_NaCl.txt", row.names = FALSE, col.names = T, quote = FALSE)
 
 ## ===============================
 ## 2.1  Distribution of variance
