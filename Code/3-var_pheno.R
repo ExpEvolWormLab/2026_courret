@@ -3,6 +3,8 @@
 ## C. elegans
 ############################################################
 
+rm(list = ls())
+
 ## ===============================
 ## 0. Packages
 ## ===============================
@@ -27,7 +29,7 @@ library(forcats)
 #Data filtering
 phen_data_NGM <- phen_data %>%
   filter(
-    env_label == "NaCl",
+    env_label == "NGM",
   ) %>%
   mutate(
     session_id = factor(session_id),
@@ -171,7 +173,7 @@ head(
 #1  mean model
 
 var_model <- lmer(
-  area.F.var ~
+  log(area.F.var) ~
     area.F +
     logD +
     temperature +
@@ -222,7 +224,7 @@ plot(phen_data_NGM$area.F.var, phen_data_NGM$area.F.var_corr)
 phen_data_NGM$CV_areaF <- (sqrt(phen_data_NGM$area.F.var) / phen_data_NGM$area.F)*100
 
 CV_model <- lmer(
-  CV_areaF ~
+  log(CV_areaF) ~
     logD + #without mean
     temperature +
     rel_humidity +

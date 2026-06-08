@@ -370,6 +370,8 @@ library(patchwork)
 phen_clean_sub <- phen_clean_sub %>%
   mutate(env_label = factor(env_label, levels = c("NGM", "NaCl")))
 
+str(phen_clean_sub)
+
 # =========================================================
 # Plot distribution variance
 # =========================================================
@@ -435,6 +437,604 @@ str(var_NaCl)
 
 
 
+
+
+
+library(data.table)
+library(dplyr)
+library(ggplot2)
+library(patchwork)
+
+# =========================================================
+# LOAD FILES
+# =========================================================
+
+mean_NaCl <- fread("data/pheno_mean_NaCl.txt")
+var_NaCl  <- fread("data/pheno_var_NaCl.txt")
+
+mean_NGM <- fread("data/pheno_mean.txt")
+var_NGM  <- fread("data/pheno_var.txt")
+
+# =========================================================
+# FORMAT DATA
+# =========================================================
+
+# Mean phenotype
+mean_df <- bind_rows(
+  mean_NaCl %>%
+    transmute(
+      pop_label,
+      value = emmean,
+      env_label = "NaCl"
+    ),
+  
+  mean_NGM %>%
+    transmute(
+      pop_label,
+      value = emmean,
+      env_label = "NGM"
+    )
+)
+
+# Variance phenotype
+var_df <- bind_rows(
+  var_NaCl %>%
+    transmute(
+      pop_label,
+      value = emmean,
+      env_label = "NaCl"
+    ),
+  
+  var_NGM %>%
+    transmute(
+      pop_label,
+      value = emmean,
+      env_label = "NGM"
+    )
+)
+
+# Order environments
+mean_df$env_label <- factor(mean_df$env_label,
+                            levels = c("NGM", "NaCl"))
+
+var_df$env_label <- factor(var_df$env_label,
+                           levels = c("NGM", "NaCl"))
+
+# =========================================================
+# PLOT VARIANCE DISTRIBUTION
+# =========================================================
+
+p_var <- ggplot(var_df,
+                aes(x = log(value),
+                    fill = env_label)) +
+  
+  geom_density(alpha = 0.45,
+               linewidth = 1) +
+  
+  scale_fill_manual(values = c(
+    "NGM"  = "#6BAED6",
+    "NaCl" = "#FC9272"
+  )) +
+  
+  labs(
+    x = "log(variance of body size)",
+    y = "Density",
+    fill = "Environment"
+  ) +
+  
+  theme_classic(base_size = 15) +
+  
+  theme(
+    legend.position = "top",
+    axis.title = element_text(face = "bold"),
+    legend.title = element_text(face = "bold")
+  )
+
+# =========================================================
+# PLOT MEAN DISTRIBUTION
+# =========================================================
+
+p_mean <- ggplot(mean_df,
+                 aes(x = value,
+                     fill = env_label)) +
+  
+  geom_density(alpha = 0.45,
+               linewidth = 1) +
+  
+  scale_fill_manual(values = c(
+    "NGM"  = "#6BAED6",
+    "NaCl" = "#FC9272"
+  )) +
+  
+  labs(
+    x = "Mean body size",
+    y = "Density",
+    fill = "Environment"
+  ) +
+  
+  theme_classic(base_size = 15) +
+  
+  theme(
+    legend.position = "none",
+    axis.title = element_text(face = "bold")
+  )
+
+# =========================================================
+# FINAL FIGURE
+# =========================================================
+
+final_plot <- p_var / p_mean +
+  plot_layout(heights = c(3, 1))
+
+final_plot
+
+
+
+
+
+
+# =========================================================
+# MERGE MEAN + VARIANCE
+# =========================================================
+
+corr_df <- mean_df %>%
+  rename(mean_value = value) %>%
+  left_join(
+    var_df %>%
+      rename(var_value = value),
+    by = c("pop_label", "env_label")
+  )
+
+# =========================================================
+# CORRELATION TESTS
+# =========================================================
+
+cor_NGM <- cor.test(
+  corr_df$mean_value[corr_df$env_label == "NGM"],
+  corr_df$var_value[corr_df$env_label == "NGM"],
+  method = "pearson"
+)
+
+cor_NaCl <- cor.test(
+  corr_df$mean_value[corr_df$env_label == "NaCl"],
+  corr_df$var_value[corr_df$env_label == "NaCl"],
+  method = "pearson"
+)
+
+# Print results
+cor_NGM
+cor_NaCl
+
+# =========================================================
+# PLOT NGM
+# =========================================================
+
+p_corr_NGM <- ggplot(
+  corr_df %>% filter(env_label == "NGM"),
+  aes(x = mean_value,
+      y = var_value)
+) +
+  
+  geom_point(
+    color = "#6BAED6",
+    alpha = 0.7,
+    size = 2
+  ) +
+  
+  geom_smooth(
+    method = "lm",
+    se = TRUE,
+    color = "black",
+    linewidth = 1
+  ) +
+  
+  annotate(
+    "text",
+    x = Inf,
+    y = Inf,
+    hjust = 1.1,
+    vjust = 1.5,
+    size = 5,
+    label = paste0(
+      "r = ",
+      round(cor_NGM$estimate, 3),
+      "\nP = ",
+      signif(cor_NGM$p.value, 3)
+    )
+  ) +
+  
+  labs(
+    title = "NGM",
+    x = "Mean body size",
+    y = "Variance of body size"
+  ) +
+  
+  theme_classic(base_size = 15) +
+  
+  theme(
+    plot.title = element_text(face = "bold"),
+    axis.title = element_text(face = "bold")
+  )
+
+# =========================================================
+# PLOT NaCl
+# =========================================================
+
+p_corr_NaCl <- ggplot(
+  corr_df %>% filter(env_label == "NaCl"),
+  aes(x = mean_value,
+      y = var_value)
+) +
+  
+  geom_point(
+    color = "#FC9272",
+    alpha = 0.7,
+    size = 2
+  ) +
+  
+  geom_smooth(
+    method = "lm",
+    se = TRUE,
+    color = "black",
+    linewidth = 1
+  ) +
+  
+  annotate(
+    "text",
+    x = Inf,
+    y = Inf,
+    hjust = 1.1,
+    vjust = 1.5,
+    size = 5,
+    label = paste0(
+      "r = ",
+      round(cor_NaCl$estimate, 3),
+      "\nP = ",
+      signif(cor_NaCl$p.value, 3)
+    )
+  ) +
+  
+  labs(
+    title = "NaCl",
+    x = "Mean body size",
+    y = "Variance of body size"
+  ) +
+  
+  theme_classic(base_size = 15) +
+  
+  theme(
+    plot.title = element_text(face = "bold"),
+    axis.title = element_text(face = "bold")
+  )
+
+# =========================================================
+# FINAL CORRELATION FIGURE
+# =========================================================
+
+corr_plot <- p_corr_NGM + p_corr_NaCl
+
+corr_plot
+
+
+
+
+
+
+#### cor francois 
+
+NGM <- fread("pheno_NGM.txt")
+NaCl  <- fread("pheno_NaCl.txt")
+
+str(NGM)
+
+library(data.table)
+library(dplyr)
+library(ggplot2)
+library(patchwork)
+
+# =========================================================
+# LOAD FILES
+# =========================================================
+
+NGM  <- fread("pheno_NGM.txt")
+NaCl <- fread("pheno_NaCl.txt")
+
+# =========================================================
+# FORMAT DATA
+# =========================================================
+
+# Mean dataframe
+mean_df <- bind_rows(
+  
+  NGM %>%
+    transmute(
+      pop_label,
+      value = mean,
+      env_label = "NGM"
+    ),
+  
+  NaCl %>%
+    transmute(
+      pop_label,
+      value = mean,
+      env_label = "NaCl"
+    )
+)
+
+# Variance dataframe
+var_df <- bind_rows(
+  
+  NGM %>%
+    transmute(
+      pop_label,
+      value = var,
+      env_label = "NGM"
+    ),
+  
+  NaCl %>%
+    transmute(
+      pop_label,
+      value = var,
+      env_label = "NaCl"
+    )
+)
+
+# Order environments
+mean_df$env_label <- factor(
+  mean_df$env_label,
+  levels = c("NGM", "NaCl")
+)
+
+var_df$env_label <- factor(
+  var_df$env_label,
+  levels = c("NGM", "NaCl")
+)
+
+# =========================================================
+# PLOT VARIANCE DISTRIBUTION
+# =========================================================
+
+p_var <- ggplot(
+  var_df,
+  aes(
+    x = var_df$value,
+    fill = env_label
+  )
+) +
+  
+  geom_density(
+    alpha = 0.45,
+    linewidth = 1
+  ) +
+  
+  scale_fill_manual(
+    values = c(
+      "NGM"  = "#6BAED6",
+      "NaCl" = "#FC9272"
+    )
+  ) +
+  
+  labs(
+    x = "Variance of body size",
+    y = "Density",
+    fill = "Environment"
+  ) +
+  
+  theme_classic(base_size = 15) +
+  
+  theme(
+    legend.position = "top",
+    axis.title = element_text(face = "bold"),
+    legend.title = element_text(face = "bold")
+  )
+
+# =========================================================
+# PLOT MEAN DISTRIBUTION
+# =========================================================
+
+p_mean <- ggplot(
+  mean_df,
+  aes(
+    x = value,
+    fill = env_label
+  )
+) +
+  
+  geom_density(
+    alpha = 0.45,
+    linewidth = 1
+  ) +
+  
+  scale_fill_manual(
+    values = c(
+      "NGM"  = "#6BAED6",
+      "NaCl" = "#FC9272"
+    )
+  ) +
+  
+  labs(
+    x = "Mean body size",
+    y = "Density",
+    fill = "Environment"
+  ) +
+  
+  theme_classic(base_size = 15) +
+  
+  theme(
+    legend.position = "none",
+    axis.title = element_text(face = "bold")
+  )
+
+# =========================================================
+# FINAL FIGURE
+# =========================================================
+
+final_plot <- p_var / p_mean +
+  plot_layout(heights = c(3, 1))
+
+final_plot
+
+# =========================================================
+# MERGE MEAN + VARIANCE
+# =========================================================
+
+corr_df <- bind_rows(
+  
+  NGM %>%
+    transmute(
+      pop_label,
+      mean_value = mean,
+      var_value  = var,
+      env_label  = "NGM"
+    ),
+  
+  NaCl %>%
+    transmute(
+      pop_label,
+      mean_value = mean,
+      var_value  = var,
+      env_label  = "NaCl"
+    )
+)
+
+corr_df$env_label <- factor(
+  corr_df$env_label,
+  levels = c("NGM", "NaCl")
+)
+
+# =========================================================
+# CORRELATION TESTS
+# =========================================================
+
+cor_NGM <- cor.test(
+  corr_df$mean_value[corr_df$env_label == "NGM"],
+  corr_df$var_value[corr_df$env_label == "NGM"],
+  method = "pearson"
+)
+
+cor_NaCl <- cor.test(
+  corr_df$mean_value[corr_df$env_label == "NaCl"],
+  corr_df$var_value[corr_df$env_label == "NaCl"],
+  method = "pearson"
+)
+
+# Print results
+cor_NGM
+cor_NaCl
+
+# =========================================================
+# PLOT NGM
+# =========================================================
+
+p_corr_NGM <- ggplot(
+  corr_df %>% filter(env_label == "NGM"),
+  aes(
+    x = mean_value,
+    y = var_value
+  )
+) +
+  
+  geom_point(
+    color = "#6BAED6",
+    alpha = 0.7,
+    size = 2
+  ) +
+  
+  geom_smooth(
+    method = "lm",
+    se = TRUE,
+    color = "black",
+    linewidth = 1
+  ) +
+  
+  annotate(
+    "text",
+    x = Inf,
+    y = Inf,
+    hjust = 1.1,
+    vjust = 1.5,
+    size = 5,
+    label = paste0(
+      "r = ",
+      round(cor_NGM$estimate, 3),
+      "\nP = ",
+      signif(cor_NGM$p.value, 3)
+    )
+  ) +
+  
+  labs(
+    title = "NGM",
+    x = "Mean body size",
+    y = "Variance of body size"
+  ) +
+  
+  theme_classic(base_size = 15) +
+  
+  theme(
+    plot.title = element_text(face = "bold"),
+    axis.title = element_text(face = "bold")
+  )
+
+# =========================================================
+# PLOT NaCl
+# =========================================================
+
+p_corr_NaCl <- ggplot(
+  corr_df %>% filter(env_label == "NaCl"),
+  aes(
+    x = mean_value,
+    y = var_value
+  )
+) +
+  
+  geom_point(
+    color = "#FC9272",
+    alpha = 0.7,
+    size = 2
+  ) +
+  
+  geom_smooth(
+    method = "lm",
+    se = TRUE,
+    color = "black",
+    linewidth = 1
+  ) +
+  
+  annotate(
+    "text",
+    x = Inf,
+    y = Inf,
+    hjust = 1.1,
+    vjust = 1.5,
+    size = 5,
+    label = paste0(
+      "r = ",
+      round(cor_NaCl$estimate, 3),
+      "\nP = ",
+      signif(cor_NaCl$p.value, 3)
+    )
+  ) +
+  
+  labs(
+    title = "NaCl",
+    x = "Mean body size",
+    y = "Variance of body size"
+  ) +
+  
+  theme_classic(base_size = 15) +
+  
+  theme(
+    plot.title = element_text(face = "bold"),
+    axis.title = element_text(face = "bold")
+  )
+
+# =========================================================
+# FINAL CORRELATION FIGURE
+# =========================================================
+
+corr_plot <- p_corr_NGM + p_corr_NaCl
+
+corr_plot
 
 
 
