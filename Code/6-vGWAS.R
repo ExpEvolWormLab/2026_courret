@@ -263,48 +263,6 @@ ggplot(SNP_var, aes(x = beta, y = logp)) +
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 ##########################################################################################
 
 gemma_var_results <- read.table("output/gwas_var_results.assoc.txt", header = TRUE, sep = "", stringsAsFactors = FALSE)

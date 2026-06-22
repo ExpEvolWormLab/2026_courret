@@ -1,10 +1,18 @@
+############################################################
+## permGWAS - preparation & analyses 
+## C. elegans – CeMEE panel
+############################################################
+
+
 ## ===============================
-## 0. Packages
+## PREPARATION
 ## ===============================
 
 library(AGHmatrix)
 library(data.table)
 library(vcfR)
+library(ggplot2)
+library(dplyr)
 
 # Load the phenotypes
 pheno_var <- fread("data/gemma_pheno_withLines_var.txt")
@@ -54,19 +62,14 @@ sum(is.na(geno_t))
 
 
 Kinship <- as.matrix(read.table("plink_pruning/pruning01/CeMEE.pruned.0.1.rel"))
-
 fam <- read.table("plink_pruning/pruning01/CeMEE.pruned.0.1.fam")
-
 ids <- fam$V2  # IID
-
 ids <- sub("_.*", "", ids)
 
 rownames(Kinship) <- ids
 colnames(Kinship) <- ids
 
 str(Kinship)
-
-
 
 # modif des pop label (en commun)
 ids_pheno <- unique(pheno_mean$line)
@@ -126,30 +129,15 @@ pheno_mean <- fread("data/pheno_mean_permGWAS.csv", sep=",", header=TRUE, encodi
 fwrite(pheno_mean, "data/pheno_mean_permGWAS.csv", sep=",")
 
 
+## ===============================
+## ANALYSES
+## ===============================
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-### Analyses ####
 
 #MEAN
 
 permGWAS_mean <- fread("output_permGWAS/p_values_phenotype_value_mean.csv")
 str(permGWAS_mean)
-
-library(ggplot2)
-library(dplyr)
-library(data.table)
 
 permGWAS_mean <- as.data.table(permGWAS_mean)
 
@@ -232,11 +220,6 @@ geom_hline(aes(yintercept = -log10(1.581517750955237e-07),
   theme(
     legend.position = "right"
   )
-
-
-
-
-
 
 
 
@@ -330,11 +313,6 @@ geom_hline(aes(yintercept = -log10(1.581517750955237e-07),
   theme(
     legend.position = "right"
   )
-
-
-
-
-
 
 
 #CV

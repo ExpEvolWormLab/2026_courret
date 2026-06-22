@@ -1,6 +1,11 @@
+############################################################
+## Extraction broad-sense heritability
+############################################################
+
 library(data.table)
 library(stringr)
 library(dplyr)
+library(ggplot2)
 
 # =========================================================
 # FUNCTION TO EXTRACT H2
@@ -107,9 +112,6 @@ h2_summary <- h2_all %>%
 
 print(h2_summary)
 
-
-
-
 h2_summary <- h2_all %>%
   group_by(Environment, Trait) %>%
   summarise(
@@ -124,140 +126,17 @@ h2_summary <- h2_all %>%
 
 str(h2_summary)
 
-
-
-values = c(
-  "NGM"  = col_NGM,
-  "NaCl" = col_NaCl
-)
-
 h2_summary$Trait <- as.character(h2_summary$Trait)
 
 h2_summary$Trait[h2_summary$Trait == "area.F"] <- "Mean"
 h2_summary$Trait[h2_summary$Trait == "log_area.F.var"] <- "ln(sigma2)"
 h2_summary$Trait[h2_summary$Trait == "log_CV_areaF"] <- "ln(CV)"
 
-ggplot(h2_summary,
-       aes(x = Trait,
-           y = mean_H2,
-           color = Environment,
-           group = Environment)) +
-  
-  geom_line(linewidth = 1, alpha = 0.8) +
-  
-  geom_point(alpha = 0.5, size = 2.5,
-             position = position_dodge(0)) +
-  
-  geom_errorbar(aes(ymin = ci_low,
-                    ymax = ci_high),
-                width = 0.12,
-                linewidth = 0.8,
-                position = position_dodge(0)) +
-  
-  scale_color_manual(values = c(
-    "NGM" = "#4C72B0",
-    "NaCl" = "#C44E52"
-  )) +
-  
-  labs(
-    x = NULL,
-    y = expression(bold(h^2))
-  ) +
-  
-  scale_x_discrete(labels = function(x) parse(text = x)) +
-  
-  theme_classic(base_size = 15) +
-  
-  theme(
-    legend.position = "top",
-    legend.text = element_text(face = "bold"),
-    axis.text.x = element_text(face = "bold"),
-    axis.title.y = element_text(face = "bold")
-  )
 
+# =========================================================
+# PLOT
+# =========================================================
 
-
-
-ggplot(h2_summary,
-       aes(x = Trait,
-           y = mean_H2,
-           colour = Environment,
-           group = Environment)) +
-  
-  geom_line(linewidth = 1.4,
-            alpha = 0.9) +
-  
-  geom_point(size = 2.5,
-             alpha = 0.8) +
-  
-  geom_errorbar(aes(ymin = ci_low,
-                    ymax = ci_high),
-                width = 0.08,
-                linewidth = 0.8) +
-  
-  scale_colour_manual(
-    values = c(
-      "NGM"  = col_NGM,
-      "NaCl" = col_NaCl
-    ),
-    labels = c(
-      "NGM"  = "Low-salt",
-      "NaCl" = "High-salt"
-    )
-  ) +
-  
-  labs(
-    x = NULL,
-    y = expression(bold(h^2)),
-    colour = NULL
-  ) +
-  
-  scale_x_discrete(labels = c(
-    "Mean" = "Mean",
-    "ln(CV)" = "ln(CV)",
-    "ln(sigma2)" = expression(ln(sigma^2))
-  )) +
-  
-  theme_classic(base_size = 16) +
-  
-  theme(
-    
-    legend.position = "top",
-    legend.justification = "center",
-    legend.direction = "horizontal",
-    
-    legend.text = element_text(
-      face = "bold",
-      size = 13
-    ),
-    
-    axis.title = element_text(
-      face = "bold",
-      size = 16
-    ),
-    
-    axis.text.x = element_text(
-      face = "bold",
-      size = 13
-    ),
-    
-    axis.text.y = element_text(
-      size = 13
-    ),
-    
-    axis.line = element_line(
-      linewidth = 0.7
-    ),
-    
-    axis.ticks = element_line(
-      linewidth = 0.7
-    ),
-    
-    plot.margin = margin(10, 10, 10, 10)
-  )
-
-
-###########################
 
 h2_summary$Trait <- factor(
   h2_summary$Trait,
@@ -333,3 +212,4 @@ ggplot(h2_summary,
     axis.line = element_line(linewidth = 0.7),
     axis.ticks = element_line(linewidth = 0.7)
   )
+

@@ -175,16 +175,6 @@ write.table(pheno_CViso_gemma$log_V1, "gemma_pheno_log_CV.txt",sep='\t', row.nam
 write.table(pheno_variso_gemma$log_V1, "gemma_pheno_log_var.txt",sep='\t', row.names = FALSE, col.names = FALSE, quote = FALSE)
 
 ## ===============================
-## 2. Data for permGWAS
-## ===============================
-
-#pas de log-transformation
-#juste genotype et phenotype
-
-
-
-
-## ===============================
 ## 3. Data for GEMMA (kinship matrix + pruning)
 ## ===============================
 

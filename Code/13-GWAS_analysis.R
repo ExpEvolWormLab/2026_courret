@@ -1,632 +1,30 @@
+############################################################
+## GWAS analysis of gridLMM
+## C. elegans – CeMEE panel
+############################################################
+
 library(data.table)
 library(qqman)
 library(ggplot2)
 library(dplyr)
-
-
-# =========================================================
-# MEAN
-# =========================================================
-
-GWAS.mean.NaCl <- GWAS.mean.NaCl %>%
-  mutate(
-    CHR = sub("_.*", "", X_ID),
-    BP = as.numeric(sub(".*_", "", X_ID))
-  ) %>%
-  arrange(CHR, BP)
-
-chr_sizes.mean.NaCl <- GWAS.mean.NaCl %>%
-  group_by(CHR) %>%
-  summarise(max_BP = max(BP), .groups = "drop") %>%
-  mutate(offset = cumsum(lag(max_BP, default = 0)))
-
-GWAS.mean.NaCl <- GWAS.mean.NaCl %>%
-  left_join(chr_sizes.mean.NaCl, by = "CHR") %>%
-  mutate(BP_cum = BP + offset)
-
-axis_df.mean.NaCl <- GWAS.mean.NaCl %>%
-  group_by(CHR) %>%
-  summarise(center = mean(BP_cum), .groups = "drop")
-
-GWAS.mean.NaCl$p.adjust_BH <- p.adjust(
-  GWAS.mean.NaCl$p_value_REML,
-  method = "BH"
-)
-
-GWAS.mean.NaCl$log10p_adj <- -log10(GWAS.mean.NaCl$p.adjust_BH)
-
-ggplot(GWAS.mean.NaCl,
-       aes(x = BP_cum,
-           y = log10p_adj,
-           color = CHR)) +
-  
-  geom_point(size = 0.5, alpha = 0.7) +
-  
-  scale_color_manual(
-    values = rep(c("grey70", "grey40"),
-                 length(unique(GWAS.mean.NaCl$CHR)))
-  ) +
-  
-  geom_hline(yintercept = -log10(0.05),
-             color = "red",
-             linetype = "dashed",
-             linewidth = 1) +
-  
-  #geom_hline(yintercept = -log10(0.1),
-  #           color = "orange",
-  #           linetype = "dashed",
-  #           linewidth = 1) +
-  
-  #geom_hline(yintercept = -log10(0.2),
-  #           color = "blue",
-  #           linetype = "dashed",
-  #           linewidth = 1) +
-  
-  scale_x_continuous(
-    breaks = axis_df.mean.NaCl$center,
-    labels = axis_df.mean.NaCl$CHR
-  ) +
-  
-  labs(
-    x = "Chromosome",
-    y = expression(-log[10](adjusted~p)),
-    color = "Chromosome"
-  ) +
-  
-  theme_classic()
-
-# SNP significatif ou non
-GWAS.mean.NaCl$signif <- GWAS.mean.NaCl$p.adjust_BH < 0.05
-
-# ---------------------------
-# Manhattan plot des beta
-# ---------------------------
-
-ggplot(GWAS.mean.NaCl,
-       aes(x = BP_cum,
-           y = beta.5,
-           color = signif)) +
-  
-  geom_point(size = 0.5, alpha = 0.7) +
-  
-  scale_color_manual(
-    values = c(
-      "FALSE" = "grey70",
-      "TRUE"  = "red"
-    )
-  ) +
-  
-  geom_hline(
-    yintercept = 0,
-    color = "black",
-    linetype = "dashed",
-    linewidth = 1
-  ) +
-  
-  scale_x_continuous(
-    breaks = axis_df$center,
-    labels = axis_df$CHR
-  ) +
-  
-  labs(
-    x = "Chromosome",
-    y = expression(beta),
-    color = "FDR < 0.05"
-  ) +
-  
-  theme_classic() +
-  
-  theme(
-    legend.position = "right"
-  )
-
-
-
-# =========================================================
-# VARIANCE
-# =========================================================
-
-GWAS.var.NaCl <- GWAS.var.NaCl %>%
-  mutate(
-    CHR = sub("_.*", "", X_ID),
-    BP = as.numeric(sub(".*_", "", X_ID))
-  ) %>%
-  arrange(CHR, BP)
-
-chr_sizes.var.NaCl <- GWAS.var.NaCl %>%
-  group_by(CHR) %>%
-  summarise(max_BP = max(BP), .groups = "drop") %>%
-  mutate(offset = cumsum(lag(max_BP, default = 0)))
-
-GWAS.var.NaCl <- GWAS.var.NaCl %>%
-  left_join(chr_sizes.var.NaCl, by = "CHR") %>%
-  mutate(BP_cum = BP + offset)
-
-axis_df.var.NaCl <- GWAS.var.NaCl %>%
-  group_by(CHR) %>%
-  summarise(center = mean(BP_cum), .groups = "drop")
-
-GWAS.var.NaCl$p.adjust_BH <- p.adjust(
-  GWAS.var.NaCl$p_value_REML,
-  method = "BH"
-)
-
-GWAS.var.NaCl$log10p_adj <- -log10(GWAS.var.NaCl$p.adjust_BH)
-
-ggplot(GWAS.var.NaCl,
-       aes(x = BP_cum,
-           y = log10p_adj,
-           color = CHR)) +
-  
-  geom_point(size = 0.5, alpha = 0.7) +
-  
-  scale_color_manual(
-    values = rep(c("grey70", "grey40"),
-                 length(unique(GWAS.var.NaCl$CHR)))
-  ) +
-  
-  geom_hline(yintercept = -log10(0.05),
-             color = "red",
-             linetype = "dashed",
-             linewidth = 1) +
-  
-  #geom_hline(yintercept = -log10(0.1),
-  #          color = "orange",
-  #           linetype = "dashed",
-  #           linewidth = 1) +
-  
-  #geom_hline(yintercept = -log10(0.2),
-  #           color = "blue",
-  #           linetype = "dashed",
-  #           linewidth = 1) +
-  
-  scale_x_continuous(
-    breaks = axis_df.var.NaCl$center,
-    labels = axis_df.var.NaCl$CHR
-  ) +
-  
-  labs(
-    x = "Chromosome",
-    y = expression(-log[10](adjusted~p)),
-    color = "Chromosome"
-  ) +
-  
-  theme_classic()
-
-# SNP significatif ou non
-GWAS.var.NaCl$signif <- GWAS.var.NaCl$p.adjust_BH < 0.05
-
-# ---------------------------
-# Manhattan plot des beta
-# ---------------------------
-
-ggplot(GWAS.var.NaCl,
-       aes(x = BP_cum,
-           y = beta.6,
-           color = signif)) +
-  
-  geom_point(size = 0.5, alpha = 0.7) +
-  
-  scale_color_manual(
-    values = c(
-      "FALSE" = "grey70",
-      "TRUE"  = "red"
-    )
-  ) +
-  
-  geom_hline(
-    yintercept = 0,
-    color = "black",
-    linetype = "dashed",
-    linewidth = 1
-  ) +
-  
-  scale_x_continuous(
-    breaks = axis_df$center,
-    labels = axis_df$CHR
-  ) +
-  
-  labs(
-    x = "Chromosome",
-    y = expression(beta),
-    color = "FDR < 0.05"
-  ) +
-  
-  theme_classic() +
-  
-  theme(
-    legend.position = "right"
-  )
-
-# =========================================================
-# CV
-# =========================================================
-
-GWAS.cv.NaCl <- GWAS.cv.NaCl %>%
-  mutate(
-    CHR = sub("_.*", "", X_ID),
-    BP = as.numeric(sub(".*_", "", X_ID))
-  ) %>%
-  arrange(CHR, BP)
-
-chr_sizes.cv.NaCl <- GWAS.cv.NaCl %>%
-  group_by(CHR) %>%
-  summarise(max_BP = max(BP), .groups = "drop") %>%
-  mutate(offset = cumsum(lag(max_BP, default = 0)))
-
-GWAS.cv.NaCl <- GWAS.cv.NaCl %>%
-  left_join(chr_sizes.cv.NaCl, by = "CHR") %>%
-  mutate(BP_cum = BP + offset)
-
-axis_df.cv.NaCl <- GWAS.cv.NaCl %>%
-  group_by(CHR) %>%
-  summarise(center = mean(BP_cum), .groups = "drop")
-
-GWAS.cv.NaCl$p.adjust_BH <- p.adjust(
-  GWAS.cv.NaCl$p_value_REML,
-  method = "BH"
-)
-
-GWAS.cv.NaCl$log10p_adj <- -log10(GWAS.cv.NaCl$p.adjust_BH)
-
-ggplot(GWAS.cv.NaCl,
-       aes(x = BP_cum,
-           y = log10p_adj,
-           color = CHR)) +
-  
-  geom_point(size = 0.5, alpha = 0.7) +
-  
-  scale_color_manual(
-    values = rep(c("grey70", "grey40"),
-                 length(unique(GWAS.cv.NaCl$CHR)))
-  ) +
-  
-  geom_hline(yintercept = -log10(0.05),
-             color = "red",
-             linetype = "dashed",
-             linewidth = 1) +
-  
-  #geom_hline(yintercept = -log10(0.1),
-  #           color = "orange",
-  #           linetype = "dashed",
-  #           linewidth = 1) +
-  
-  #geom_hline(yintercept = -log10(0.2),
-  #           color = "blue",
-  #           linetype = "dashed",
-  #           linewidth = 1) +
-  
-  scale_x_continuous(
-    breaks = axis_df.cv.NaCl$center,
-    labels = axis_df.cv.NaCl$CHR
-  ) +
-  
-  labs(
-    x = "Chromosome",
-    y = expression(-log[10](adjusted~p)),
-    color = "Chromosome"
-  ) +
-  
-  theme_classic()
-
-
-
-# SNP significatif ou non
-GWAS.cv.NaCl$signif <- GWAS.cv.NaCl$p.adjust_BH < 0.05
-
-# ---------------------------
-# Manhattan plot des beta
-# ---------------------------
-
-ggplot(GWAS.cv.NaCl,
-       aes(x = BP_cum,
-           y = beta.5,
-           color = signif)) +
-  
-  geom_point(size = 0.5, alpha = 0.7) +
-  
-  scale_color_manual(
-    values = c(
-      "FALSE" = "grey70",
-      "TRUE"  = "red"
-    )
-  ) +
-  
-  geom_hline(
-    yintercept = 0,
-    color = "black",
-    linetype = "dashed",
-    linewidth = 1
-  ) +
-  
-  scale_x_continuous(
-    breaks = axis_df$center,
-    labels = axis_df$CHR
-  ) +
-  
-  labs(
-    x = "Chromosome",
-    y = expression(beta),
-    color = "FDR < 0.05"
-  ) +
-  
-  theme_classic() +
-  
-  theme(
-    legend.position = "right"
-  )
-
-
-
-
-# =========================================================
-# SNP significatifs communs Mean vs Variance
-# =========================================================
-install.packages("VennDiagram")
 library(VennDiagram)
 library(grid)
-
-# ---------------------------
-# SNP significatifs
-# ---------------------------
-
-sig_mean <- GWAS.mean.NaCl %>%
-  filter(p.adjust_BH < 0.05) %>%
-  pull(X_ID)
-
-sig_var <- GWAS.var.NaCl %>%
-  filter(p.adjust_BH < 0.05) %>%
-  pull(X_ID)
-
-# Vérification
-length(sig_mean)
-length(sig_var)
-
-# SNP communs
-common_snps <- intersect(sig_mean, sig_var)
-
-length(common_snps)
-
-# Affichage SNP communs
-common_snps
-
-# =========================================================
-# Venn diagram
-# =========================================================
-
-venn.plot <- draw.pairwise.venn(
-  
-  area1 = length(unique(sig_mean)),
-  area2 = length(unique(sig_var)),
-  cross.area = length(unique(common_snps)),
-  
-  category = c("Mean", "Variance"),
-  
-  fill = c("skyblue", "orange"),
-  
-  alpha = c(0.5, 0.5),
-  
-  cex = 2,
-  cat.cex = 2,
-  
-  cat.pos = c(-20, 20),
-  cat.dist = c(0.05, 0.05)
-)
-
-grid.draw(venn.plot)
-
-graphics.off()
-
-library(VennDiagram)
-library(grid)
-
-# SNP significatifs mean
-SNP_mean <- GWAS.var.NaCl$X_ID[GWAS.var.NaCl$p.adjust_BH < 0.05]
-
-# SNP significatifs variance
-SNP_var <- GWAS.cv.NaCl$X_ID[GWAS.cv.NaCl$p.adjust_BH < 0.05]
-
-# Nombre en commun
-length(intersect(SNP_mean, SNP_var))
-
-# Venn diagram
-grid.newpage()
-
-draw.pairwise.venn(
-  
-  area1 = length(unique(SNP_mean)),
-  area2 = length(unique(SNP_var)),
-  cross.area = length(intersect(SNP_mean, SNP_var)),
-  
-  category = c("variance", "CV"),
-  
-  fill = c("skyblue", "tomato"),
-  alpha = c(0.5, 0.5),
-  
-  cex = 2,
-  cat.cex = 2,
-  
-  cat.pos = c(-20, 20),
-  cat.dist = c(0.05, 0.05),
-  
-  scaled = FALSE
-)
-
-
-
-
-library(dplyr)
-library(VennDiagram)
-library(grid)
-
-# =========================================================
-# 1. FONCTION PROPRE DE CLEAN SNPs
-# =========================================================
-
-get_sig_snps <- function(df, pcol){
-  df %>%
-    filter(!is.na(X_ID)) %>%
-    mutate(X_ID = as.character(X_ID)) %>%
-    filter(.data[[pcol]] < 0.05) %>%
-    pull(X_ID) %>%
-    unique()
-}
-
-# =========================================================
-# 2. EXTRACTION DES 4 SETS
-# =========================================================
-
-NGM_mean   <- get_sig_snps(GWAS.mean, "p.adjust_BH")
-NGM_var    <- get_sig_snps(GWAS.var, "p_adj")
-
-NaCl_mean  <- get_sig_snps(GWAS.mean.NaCl, "p.adjust_BH")
-NaCl_var   <- get_sig_snps(GWAS.var.NaCl, "p.adjust_BH")
-
-# =========================================================
-# 3. CHECK RAPIDE (IMPORTANT DEBUG)
-# =========================================================
-
-length(NGM_mean)
-length(NGM_var)
-length(NaCl_mean)
-length(NaCl_var)
-
-# =========================================================
-# 4. INTERSECTIONS (SAFE VERSION)
-# =========================================================
-
-n12 <- length(intersect(NGM_mean, NGM_var))
-n13 <- length(intersect(NGM_mean, NaCl_mean))
-n14 <- length(intersect(NGM_mean, NaCl_var))
-n23 <- length(intersect(NGM_var, NaCl_mean))
-n24 <- length(intersect(NGM_var, NaCl_var))
-n34 <- length(intersect(NaCl_mean, NaCl_var))
-
-n123 <- length(Reduce(intersect, list(NGM_mean, NGM_var, NaCl_mean)))
-n124 <- length(Reduce(intersect, list(NGM_mean, NGM_var, NaCl_var)))
-n134 <- length(Reduce(intersect, list(NGM_mean, NaCl_mean, NaCl_var)))
-n234 <- length(Reduce(intersect, list(NGM_var, NaCl_mean, NaCl_var)))
-
-n1234 <- length(Reduce(intersect, list(NGM_mean, NGM_var, NaCl_mean, NaCl_var)))
-
-# =========================================================
-# 5. VENN 4 SETS
-# =========================================================
-
-grid.newpage()
-
-draw.quad.venn(
-  
-  area1 = length(NGM_mean),
-  area2 = length(NGM_var),
-  area3 = length(NaCl_mean),
-  area4 = length(NaCl_var),
-  
-  n12 = n12,
-  n13 = n13,
-  n14 = n14,
-  n23 = n23,
-  n24 = n24,
-  n34 = n34,
-  
-  n123 = n123,
-  n124 = n124,
-  n134 = n134,
-  n234 = n234,
-  
-  n1234 = n1234,
-  
-  category = c("NGM Mean", "NGM Var", "NaCl Mean", "NaCl Var"),
-  
-  fill = c("steelblue", "skyblue", "tomato", "orange"),
-  alpha = 0.5,
-  
-  cex = 1.2,
-  cat.cex = 1.2,
-  
-  cat.pos = c(-20, 20, 140, -140),
-  cat.dist = c(0.05, 0.05, 0.05, 0.05)
-)
-
-
-
-
-
-
-
-
-
-# =========================================================
-# EXTRACTION DES SNPs SIGNIFICATIFS - VARIANCE NaCl
-# =========================================================
-
-# SNPs significatifs
-sig_var_table <- GWAS.var.NaCl %>%
-  
-  filter(p.adjust_BH < 0.05) %>%
-  
-  mutate(
-    CHR = sub("_.*", "", X_ID),
-    BP  = as.numeric(sub(".*_", "", X_ID))
-  ) %>%
-  
-  arrange(CHR, BP) %>%
-  
-  select(
-    SNP            = X_ID,
-    Chromosome     = CHR,
-    Position_BP    = BP,
-    beta           = beta.6,
-    p_value        = p_value_REML,
-    p_adjusted_BH  = p.adjust_BH,
-    minus_log10_p  = log10p_adj
-  )
-
-# =========================================================
-# APERCU
-# =========================================================
-
-head(sig_var_table)
-
-# Nombre total de SNPs significatifs
-nrow(sig_var_table)
-
-# =========================================================
-# RESUME PAR CHROMOSOME
-# =========================================================
-
-summary_chr <- sig_var_table %>%
-  
-  group_by(Chromosome) %>%
-  
-  summarise(
-    
-    n_SNPs = n(),
-    
-    min_position = min(Position_BP),
-    
-    max_position = max(Position_BP),
-    
-    mean_beta = mean(beta, na.rm = TRUE),
-    
-    .groups = "drop"
-  )
-
-
-
-
-
-
-
-
-##### Miroir  ######
-
-
-library(data.table)
-library(dplyr)
-library(ggplot2)
 library(patchwork)
 library(cowplot)
+
+
+GWAS.mean.pruned <- fread("data/GWAS.mean.pruned.txt", sep = "\t", header = TRUE)
+GWAS.var.pruned <- fread("data/GWAS.var.pruned.txt", sep = "\t", header = TRUE)
+GWAS.cv.pruned <- fread("data/GWAS.cv.pruned.txt", sep = "\t", header = TRUE)
+
+GWAS.mean.NaCl.pruned <- fread("data/GWAS.mean.NaCl.pruned.txt", sep = "\t", header = TRUE)
+GWAS.var.NaCl.pruned <- fread("data/GWAS.var.NaCl.pruned.txt", sep = "\t", header = TRUE)
+GWAS.cv.NaCl.pruned<- fread("data/GWAS.cv.NaCl.pruned.txt", sep = "\t", header = TRUE)
+
+
+# =========================================================
+# MIROIR MANHATTAN
+# =========================================================
 
 # =========================================================
 # CHROMOSOME ORDER
@@ -1059,66 +457,39 @@ legend <- get_legend(legend_plot)
 # =========================================================
 
 top_row <- plot_grid(
-  
   env_top,
-  
   yleft_top,
-  
   p1,
-  
   p2,
-  
   p3,
-  
   nrow = 1,
-  
   rel_widths = c(0.04, 0.05, 1, 1, 1)
-  
 )
 
 bottom_row <- plot_grid(
-  
   env_bottom,
-  
   yleft_bottom,
-  
   p4,
-  
   p5,
-  
   p6,
-  
   nrow = 1,
-  
   rel_widths = c(0.04, 0.05, 1, 1, 1)
-  
 )
 
 final_plot <- plot_grid(
-  
   top_row,
-  
   legend,
-  
   bottom_row,
-  
   ncol = 1,
-  
   rel_heights = c(1, 0.08, 1)
-  
 )
 
 final_plot
 
 
-
-######### Cluster #########
-
-
-
-library(dplyr)
-library(VennDiagram)
-library(grid)
+# =========================================================
+# VENN DIAGRAM
+# =========================================================
 
 # =========================================================
 # FUNCTION
@@ -1351,9 +722,6 @@ cv=draw.quad.venn(
 )
 
 
-
-(v | cv)
-
 shared_CV_sigma2 <- Reduce(
   intersect,
   list(NGM_cv,
@@ -1371,12 +739,6 @@ length(intersect(NaCl_cv, NaCl_var))
 
 
 ############################### manhattan definitif ######################
-
-
-library(data.table)
-library(dplyr)
-library(ggplot2)
-library(patchwork)
 
 ############################################################
 ##################### PREP FUNCTION ########################
@@ -1742,49 +1104,6 @@ final_plot
 
 
 
-final_plot +
-  plot_annotation(
-    theme = theme(
-      plot.margin = margin(5, 5, 5, 5)
-    )
-  )
-
-wrap_elements(full = 
-                grid::textGrob(
-                  expression(-log[10](italic(p))),
-                  rot = 90,
-                  gp = grid::gpar(fontsize = 16, fontface = "bold")
-                )
-) | final_plot
-
-library(cowplot)
-
-ggdraw(final_plot) +
-  
-  draw_label(
-    
-    expression(-log[10](italic(p))),
-    
-    x = 0.015,
-    
-    y = 0.5,
-    
-    angle = 90,
-    
-    fontface = "bold",
-    
-    size = 16
-    
-  )
-
-
-
-
-
-
-
-
-
 ############################################################
 ###################### PLOT FUNCTION #######################
 ############################################################
@@ -1957,12 +1276,9 @@ final_plot
 
 
 
-############################ Effets Volcano #######################
-
-library(data.table)
-library(dplyr)
-library(ggplot2)
-library(patchwork)
+# =========================================================
+# Volcano plots
+# =========================================================
 
 ###########################################################
 # COULEURS

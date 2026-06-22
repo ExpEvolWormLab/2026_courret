@@ -1,10 +1,11 @@
 ## ===============================
-## mGWAS
+## mGWAS - GEMMA
 ## ===============================
+library(data.table)
 
 pheno_meaniso <- fread("data/gemma_pheno_withLines.txt")
-SNP_perm_mean =  fread("output/perm_pwald_matrix.txt")
-SNP_mean = fread("output/gwas_results.assoc.txt")
+SNP_perm_mean =  fread("others/output_GEMMA/perm_pwald_matrix.txt")
+SNP_mean = fread("others/output_GEMMA/gwas_results.assoc.txt")
 
 
 str(pheno_meaniso)

@@ -91,3 +91,11 @@ GWAS.mean.NaCl.pruned <- GWAS.mean.NaCl[X_ID %in% snps_pruned$X_ID]
 GWAS.var.NaCl.pruned  <- GWAS.var.NaCl[X_ID %in% snps_pruned$X_ID]
 GWAS.cv.NaCl.pruned   <- GWAS.cv.NaCl[X_ID %in% snps_pruned$X_ID]
 
+
+write.table(GWAS.mean.pruned, file = "data/GWAS.mean.pruned.txt", sep = "\t", quote = FALSE, row.names = FALSE)
+write.table(GWAS.var.pruned, file = "data/GWAS.var.pruned.txt", sep = "\t", quote = FALSE, row.names = FALSE)
+write.table(GWAS.cv.pruned, file = "data/GWAS.cv.pruned.txt", sep = "\t", quote = FALSE, row.names = FALSE)
+
+write.table(GWAS.mean.NaCl.pruned, file = "data/GWAS.mean.NaCl.pruned.txt", sep = "\t", quote = FALSE, row.names = FALSE)
+write.table(GWAS.var.NaCl.pruned, file = "data/GWAS.var.NaCl.pruned.txt", sep = "\t", quote = FALSE, row.names = FALSE)
+write.table(GWAS.cv.NaCl.pruned, file = "data/GWAS.cv.NaCl.pruned.txt", sep = "\t", quote = FALSE, row.names = FALSE)

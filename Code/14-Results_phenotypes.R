@@ -1,13 +1,28 @@
+############################################################
+## PHENOTYPE DATA PREPARATION & ANALYSES
+## C. elegans – CeMEE panel
+############################################################
+
+
+## ===============================
+## I. PREPARATION & MODELS
+## ===============================
+
 ## ===============================
 ## 1. LOAD DATA
 ## ===============================
+
 library(data.table)
 library(lme4)
 library(car)
+library(dplyr)
+library(ggplot2)
+library(patchwork)
+library(scales)
+
+
 rm(list = ls())
 phen_data <- fread("data/phen_data.txt")
-
-## 1.2 Outliers de variance
 
 cutoff <- 3
 
@@ -297,9 +312,6 @@ fwrite(
 
 str(pheno_CV_NaCl)
 
-
-
-
 table_NGM <- pheno_mean_NGM %>%
   select(pop_label, mean = emmean) %>%
   left_join(pheno_var_NGM %>% select(pop_label, var = emmean), by = "pop_label") %>%
@@ -311,32 +323,20 @@ table_NaCl <- pheno_mean_NaCl %>%
   left_join(pheno_var_NaCl %>% select(pop_label, var = emmean), by = "pop_label") %>%
   left_join(pheno_CV_NaCl %>% select(pop_label, CV = emmean), by = "pop_label")
 
-
-#table_NGM <- phen_NGM %>%
-#  select(pop_label, mean_pred, var_pred, CV_pred)
-
-#table_NaCl <- phen_NaCl %>%
-#  select(pop_label, mean_pred, var_pred, CV_pred)
-
 fwrite(table_NaCl, "data/table_NaCl.txt")
 fwrite(table_NGM, "data/table_NGM.txt")
 
 
+## ===============================
+## II. ANALYSES
+## ===============================
 
-
-
-######Analyses
 
 BLUE_NGM <- fread("data/table_NGM.txt")
 BLUE_NaCl <- fread("data/table_NaCl.txt")
 
 str(BLUE_NaCl)
 str(BLUE_NGM)
-
-library(data.table)
-library(dplyr)
-library(ggplot2)
-library(patchwork)
 
 # =========================================================
 # DATA
@@ -353,7 +353,7 @@ col_NGM  <- "#4C72B0"
 col_NaCl <- "#C44E52"
 
 # =========================================================
-# THEME (Nature / Science style)
+# THEME
 # =========================================================
 
 theme_science <- theme_classic(base_size = 16) +
@@ -517,11 +517,6 @@ cor_mean_var_NaCl
 cor_mean_CV_NaCl
 
 
-
-
-
-
-
 # =========================================================
 # MERGE DATA
 # =========================================================
@@ -665,15 +660,6 @@ p_combined_mean_CV <- make_combined_plot(
 
 
 
-################################
-
-
-
-
-
-
-
-
 # =========================================================
 # FUNCTION FOR COMBINED ENV PLOTS
 # with panel labels a/b/c
@@ -795,13 +781,8 @@ p_combined_mean_CV <- make_combined_plot(
 
 
 
-#########################################
-
-library(ggplot2)
-library(dplyr)
-
 # =========================================================
-# DATA FORMAT
+# DISTRIBUTION
 # =========================================================
 
 BLUE_NGM  <- as.data.frame(BLUE_NGM)
@@ -877,53 +858,9 @@ p_cv <- plot_density(all_data,
 
 
 
-
-
-
-library(ggplot2)
-library(dplyr)
-library(scales)
-
 # =========================================================
-# FUNCTION BOXPLOT + POINTS (MATCH COLORS LIGHTER)
+# BOXPLOT 
 # =========================================================
-
-plot_box_env <- function(data, variable, title){
-  
-  ggplot(data, aes(x = env, y = .data[[variable]])) +
-    
-    # BOXPLOT (fill = env)
-    geom_boxplot(aes(fill = env),
-                 alpha = 0.65,
-                 width = 0.6,
-                 outlier.shape = NA) +
-    
-    # POINTS (color = env = SAME palette as fill)
-    geom_jitter(aes(color = env),
-                width = 0.15,
-                size = 1.4,
-                alpha = 0.35) +
-    
-    # SAME COLOR SCALE FOR BOTH
-    scale_fill_manual(values = cols) +
-    scale_color_manual(values = cols) +
-    
-    labs(title = title,
-         x = "Environment",
-         y = variable) +
-    
-    theme_science
-}
-
-p_mean_box <- plot_box_env(all_data, "mean", "Mean body size")
-p_var_box  <- plot_box_env(all_data, "var",  "Variance of body size")
-p_cv_box   <- plot_box_env(all_data, "CV",   "Coefficient of variation")
-
-
-(p_mean_box | p_var_box | p_cv_box)
-
-
-###########################@
 
 all_data$env <- factor(all_data$env,
                        levels = c("NGM", "NaCl"))
@@ -1025,10 +962,10 @@ p_cv_box <- plot_box_env(all_data,
 
 
 
-######################## correlation entre env. 
+# =========================================================
+# CORRELATIONS
+# =========================================================
 
-
-library(dplyr)
 
 BLUE_NGM_clean <- BLUE_NGM %>%
   select(pop_label, mean, var, CV) %>%
@@ -1080,12 +1017,9 @@ cor_res <- cor.test(BLUE_merge$var_NGM,
 
 cor_res
 
-(p | l)
-
 
 cor_cv <- cor.test(BLUE_merge$CV_NGM,
                    BLUE_merge$CV_NaCl)
-
 cor_cv
 
 l=ggplot(BLUE_merge, aes(x = CV_NGM, y = CV_NaCl)) +
@@ -1108,7 +1042,7 @@ l=ggplot(BLUE_merge, aes(x = CV_NGM, y = CV_NaCl)) +
     y = expression(ln(CV)[NaCl])
   )
 
-
+(p | l)
 
 make_env_correlation_plot <- function(data,
                                       xvar,
@@ -1180,11 +1114,4 @@ p_cv <- make_env_correlation_plot(
 )
 
 p_var | p_cv
-
-
-cor.test(BLUE_merge$var_NGM,
-                  BLUE_merge$var_NaCl)$estimate
-
-cor.test(BLUE_merge$CV_NGM,
-                 BLUE_merge$CV_NaCl)$estimate
 
